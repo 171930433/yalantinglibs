@@ -54,3 +54,8 @@ node_modules
 bazel-*
 !BUILD.bazel
 cdb.json
+
+
+# build
+/build
+/install_dir
