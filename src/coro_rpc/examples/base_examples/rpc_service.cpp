@@ -16,9 +16,12 @@
 #include "rpc_service.h"
 
 #include <chrono>
+#include <cstdint>
 #include <thread>
 #include <ylt/coro_rpc/coro_rpc_client.hpp>
 #include <ylt/easylog.hpp>
+
+#include "ylt/coro_rpc/impl/errno.h"
 
 using namespace coro_rpc;
 
@@ -30,6 +33,23 @@ std::string hello_world() {
 int A_add_B(int a, int b) {
   ELOGV(INFO, "call A+B");
   return a + b;
+}
+
+void echo_with_attachment(coro_rpc::context<void> conn) {
+  ELOGV(INFO, "call echo_with_attachment");
+  std::string str = conn.release_request_attachment();
+  conn.set_response_attachment(std::move(str));
+  conn.response_msg();
+}
+
+void echo_with_attachment2(coro_rpc::context<void> conn) {
+  ELOGV(INFO, "call echo_with_attachment2");
+  std::string_view str = conn.get_request_attachment();
+  // The live time of attachment is same as coro_rpc::context
+  conn.set_response_attachment([str, conn] {
+    return str;
+  });
+  conn.response_msg();
 }
 
 std::string echo(std::string_view sv) { return std::string{sv}; }
@@ -59,7 +79,7 @@ async_simple::coro::Lazy<std::string> nested_echo(std::string_view sv) {
   ELOGV(INFO, "start nested echo");
   coro_rpc::coro_rpc_client client(co_await coro_io::get_current_executor());
   [[maybe_unused]] auto ec = co_await client.connect("127.0.0.1", "8802");
-  assert(ec == std::errc{});
+  assert(!ec);
   ELOGV(INFO, "connect another server");
   auto ret = co_await client.call<echo>(sv);
   assert(ret.value() == sv);
@@ -79,4 +99,16 @@ void HelloService::hello_with_delay(
     conn.response_msg("HelloService::hello_with_delay");
   }).detach();
   return;
+}
+
+void return_error(coro_rpc::context<std::string> conn) {
+  conn.response_error(coro_rpc::err_code{404}, "404 Not Found.");
+}
+void rpc_with_state_by_tag(coro_rpc::context<std::string> conn) {
+  if (!conn.tag().has_value()) {
+    conn.tag() = uint64_t{0};
+  }
+  auto &cnter = std::any_cast<uint64_t &>(conn.tag());
+  ELOGV(INFO, "call count: %d", ++cnter);
+  conn.response_msg(std::to_string(cnter));
 }

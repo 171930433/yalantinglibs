@@ -26,6 +26,18 @@ export const coro_rpc_Links = [
     { text: 'coro_rpc简介', link: '/zh/coro_rpc/coro_rpc_introduction' },
 ];
 
+export const easylog_Links = [
+    { text: 'easylog简介', link: '/zh/easylog/easylog_introduction' },
+];
+
+export const coro_http_Links = [
+    { text: 'coro_http 简介', link: '/zh/coro_http/coro_http_introduction' },
+];
+
+export const struct_xxx_Links = [
+    { text: 'struct_xml struct_json struct_yaml 简介', link: '/zh/struct_xxx/struct_xxx_introduction' },
+];
+
 export const aboutLinks = [
     { text: 'purecpp', link: '/zh/about/community' }, //TODO 未来支持英语
     { text: 'contribute', link: '/zh/about/contribute' },

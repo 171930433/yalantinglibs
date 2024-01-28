@@ -22,36 +22,32 @@
 #include <asio/buffer.hpp>
 #include <atomic>
 #include <cstdint>
-#include <future>
+#include <functional>
 #include <memory>
 #include <string_view>
 #include <system_error>
 #include <utility>
-#include <variant>
-#include <vector>
 #include <ylt/easylog.hpp>
 
 #include "ylt/coro_io/coro_io.hpp"
+#include "ylt/coro_rpc/impl/errno.h"
 #ifdef UNIT_TEST_INJECT
 #include "inject_action.hpp"
 #endif
 namespace coro_rpc {
-
-template <typename T>
-concept apply_user_buf = requires() {
-  requires std::is_same_v<std::string_view,
-                          typename std::remove_cvref_t<T>::buffer_type>;
-};
 
 class coro_connection;
 using rpc_conn = std::shared_ptr<coro_connection>;
 
 template <typename rpc_protocol>
 struct context_info_t {
-  constexpr static size_t body_default_size_ = 256;
   std::shared_ptr<coro_connection> conn_;
   typename rpc_protocol::req_header req_head_;
-  std::vector<char> body_;
+  std::string req_body_;
+  std::string req_attachment_;
+  std::function<std::string_view()> resp_attachment_ = [] {
+    return std::string_view{};
+  };
   std::atomic<bool> has_response_ = false;
   bool is_delay_ = false;
   context_info_t(std::shared_ptr<coro_connection> &&conn)
@@ -93,7 +89,7 @@ class coro_connection : public std::enable_shared_from_this<coro_connection> {
                       std::chrono::seconds(0))
       : executor_(executor),
         socket_(std::move(socket)),
-        resp_err_(std::errc{}),
+        resp_err_(),
         timer_(executor->get_asio_executor()) {
     if (timeout_duration == std::chrono::seconds(0)) {
       return;
@@ -157,7 +153,8 @@ class coro_connection : public std::enable_shared_from_this<coro_connection> {
     std::string resp_error_msg;
     while (true) {
       auto &req_head = context_info->req_head_;
-      auto &body = context_info->body_;
+      auto &body = context_info->req_body_;
+      auto &req_attachment = context_info->req_attachment_;
       reset_timer();
       auto ec = co_await rpc_protocol::read_head(socket, req_head);
       cancel_timer();
@@ -195,16 +192,12 @@ class coro_connection : public std::enable_shared_from_this<coro_connection> {
           break;
         }
 
-      std::string_view payload{};
+      std::string_view payload;
       // rpc_protocol::buffer_type maybe from user, default from framework.
-      constexpr bool apply_user_buf_v = apply_user_buf<rpc_protocol>;
-      if constexpr (apply_user_buf_v) {
-        ec = co_await rpc_protocol::read_payload(socket, req_head, payload);
-      }
-      else {
-        ec = co_await rpc_protocol::read_payload(socket, req_head, body);
-        payload = std::string_view{body.data(), body.size()};
-      }
+
+      ec = co_await rpc_protocol::read_payload(socket, req_head, body,
+                                               req_attachment);
+      payload = std::string_view{body};
 
       if (ec)
         AS_UNLIKELY {
@@ -214,7 +207,7 @@ class coro_connection : public std::enable_shared_from_this<coro_connection> {
           break;
         }
 
-      std::pair<std::errc, std::string> pair{};
+      std::pair<coro_rpc::errc, std::string> pair{};
 
       auto key = rpc_protocol::get_route_key(req_head);
       auto handler = router.get_handler(key);
@@ -237,8 +230,6 @@ class coro_connection : public std::enable_shared_from_this<coro_connection> {
         case rpc_call_type::callback_with_delay:
           ++delay_resp_cnt;
           rpc_call_type_ = rpc_call_type::non_callback;
-          context_info = std::make_shared<context_info_t<rpc_protocol>>(
-              shared_from_this());
           continue;
         case rpc_call_type::callback_finished:
           continue;
@@ -249,14 +240,17 @@ class coro_connection : public std::enable_shared_from_this<coro_connection> {
             this->callback_awaitor_handler_ = std::move(handler);
           });
           context_info->has_response_ = false;
+          context_info->resp_attachment_ = []() -> std::string_view {
+            return {};
+          };
           rpc_call_type_ = rpc_call_type::non_callback;
           continue;
       }
       resp_error_msg.clear();
-      if (resp_err != std::errc{})
+      if (!!resp_err)
         AS_UNLIKELY { std::swap(resp_buf, resp_error_msg); }
       std::string header_buf = rpc_protocol::prepare_response(
-          resp_buf, req_head, resp_err, resp_error_msg);
+          resp_buf, req_head, 0, resp_err, resp_error_msg);
 
 #ifdef UNIT_TEST_INJECT
       if (g_action == inject_action::close_socket_after_send_length) {
@@ -276,16 +270,19 @@ class coro_connection : public std::enable_shared_from_this<coro_connection> {
         resp_buf[0] = resp_buf[0] + 1;
       }
 #endif
-      if (resp_err_ == std::errc{})
+      if (!resp_err_)
         AS_LIKELY {
-          if (resp_err != std::errc{})
+          if (!resp_err)
             AS_UNLIKELY { resp_err_ = resp_err; }
-          write_queue_.emplace_back(std::move(header_buf), std::move(resp_buf));
+          write_queue_.emplace_back(std::move(header_buf), std::move(resp_buf),
+                                    [] {
+                                      return std::string_view{};
+                                    });
           if (write_queue_.size() == 1) {
             send_data().start([self = shared_from_this()](auto &&) {
             });
           }
-          if (resp_err != std::errc{})
+          if (!!resp_err)
             AS_UNLIKELY { break; }
         }
     }
@@ -299,11 +296,29 @@ class coro_connection : public std::enable_shared_from_this<coro_connection> {
 
   template <typename rpc_protocol>
   void response_msg(std::string &&body_buf,
+                    std::function<std::string_view()> &&resp_attachment,
                     const typename rpc_protocol::req_header &req_head,
                     bool is_delay) {
-    std::string header_buf = rpc_protocol::prepare_response(body_buf, req_head);
-    response(std::move(header_buf), std::move(body_buf), shared_from_this(),
-             is_delay)
+    std::string header_buf = rpc_protocol::prepare_response(
+        body_buf, req_head, resp_attachment().size());
+    response(std::move(header_buf), std::move(body_buf),
+             std::move(resp_attachment), shared_from_this(), is_delay)
+        .via(executor_)
+        .detach();
+  }
+
+  template <typename rpc_protocol>
+  void response_error(coro_rpc::errc ec, std::string_view error_msg,
+                      const typename rpc_protocol::req_header &req_head,
+                      bool is_delay) {
+    std::function<std::string_view()> attach_ment = []() -> std::string_view {
+      return {};
+    };
+    std::string body_buf;
+    std::string header_buf = rpc_protocol::prepare_response(
+        body_buf, req_head, 0, ec, error_msg, true);
+    response(std::move(header_buf), std::move(body_buf), std::move(attach_ment),
+             shared_from_this(), is_delay)
         .via(executor_)
         .detach();
   }
@@ -341,19 +356,16 @@ class coro_connection : public std::enable_shared_from_this<coro_connection> {
     conn_id_ = conn_id;
   }
 
-  template <typename T>
-  void set_tag(T &&tag) {
-    tag_ = std::forward<T>(tag);
-  }
-
-  std::any get_tag() { return tag_; }
+  std::any &tag() { return tag_; }
+  const std::any &tag() const { return tag_; }
 
   auto &get_executor() { return *executor_; }
 
  private:
-  async_simple::coro::Lazy<void> response(std::string header_buf,
-                                          std::string body_buf, rpc_conn self,
-                                          bool is_delay) noexcept {
+  async_simple::coro::Lazy<void> response(
+      std::string header_buf, std::string body_buf,
+      std::function<std::string_view()> resp_attachment, rpc_conn self,
+      bool is_delay) noexcept {
     if (has_closed())
       AS_UNLIKELY {
         ELOGV(DEBUG, "response_msg failed: connection has been closed");
@@ -365,7 +377,8 @@ class coro_connection : public std::enable_shared_from_this<coro_connection> {
       body_buf.clear();
     }
 #endif
-    write_queue_.emplace_back(std::move(header_buf), std::move(body_buf));
+    write_queue_.emplace_back(std::move(header_buf), std::move(body_buf),
+                              std::move(resp_attachment));
     if (is_delay) {
       --delay_resp_cnt;
       assert(delay_resp_cnt >= 0);
@@ -402,19 +415,38 @@ class coro_connection : public std::enable_shared_from_this<coro_connection> {
         co_return;
       }
 #endif
-      std::array<asio::const_buffer, 2> buffers{asio::buffer(msg.first),
-                                                asio::buffer(msg.second)};
+      auto attachment = std::get<2>(msg)();
+      if (attachment.empty()) {
+        std::array<asio::const_buffer, 2> buffers{
+            asio::buffer(std::get<0>(msg)), asio::buffer(std::get<1>(msg))};
 #ifdef YLT_ENABLE_SSL
-      if (use_ssl_) {
-        assert(ssl_stream_);
-        ret = co_await coro_io::async_write(*ssl_stream_, buffers);
+        if (use_ssl_) {
+          assert(ssl_stream_);
+          ret = co_await coro_io::async_write(*ssl_stream_, buffers);
+        }
+        else {
+#endif
+          ret = co_await coro_io::async_write(socket_, buffers);
+#ifdef YLT_ENABLE_SSL
+        }
+#endif
       }
       else {
-#endif
-        ret = co_await coro_io::async_write(socket_, buffers);
+        std::array<asio::const_buffer, 3> buffers{
+            asio::buffer(std::get<0>(msg)), asio::buffer(std::get<1>(msg)),
+            asio::buffer(attachment)};
 #ifdef YLT_ENABLE_SSL
-      }
+        if (use_ssl_) {
+          assert(ssl_stream_);
+          ret = co_await coro_io::async_write(*ssl_stream_, buffers);
+        }
+        else {
 #endif
+          ret = co_await coro_io::async_write(socket_, buffers);
+#ifdef YLT_ENABLE_SSL
+        }
+#endif
+      }
       if (ret.first)
         AS_UNLIKELY {
           ELOGV(ERROR, "%s, %s", ret.first.message().data(),
@@ -424,10 +456,9 @@ class coro_connection : public std::enable_shared_from_this<coro_connection> {
         }
       write_queue_.pop_front();
     }
-    if (resp_err_ != std::errc{})
+    if (!!resp_err_)
       AS_UNLIKELY {
-        ELOGV(ERROR, "%s, %s", std::make_error_code(resp_err_).message().data(),
-              "resp_err_");
+        ELOGV(ERROR, "%s, %s", make_error_message(resp_err_), "resp_err_");
         close();
         co_return;
       }
@@ -449,11 +480,13 @@ class coro_connection : public std::enable_shared_from_this<coro_connection> {
     if (has_closed_) {
       return;
     }
-    close_socket();
+    has_closed_ = true;
+    asio::error_code ignored_ec;
+    socket_.shutdown(asio::ip::tcp::socket::shutdown_both, ignored_ec);
+    socket_.close(ignored_ec);
     if (quit_callback_) {
       quit_callback_(conn_id_);
     }
-    has_closed_ = true;
   }
 
   void reset_timer() {
@@ -472,20 +505,9 @@ class coro_connection : public std::enable_shared_from_this<coro_connection> {
             ELOGV(INFO, "close timeout client conn_id %d", conn_id_);
 #endif
 
-            close_socket();
+            close();
           }
         });
-  }
-
-  void close_socket() {
-    if (has_closed_) {
-      return;
-    }
-
-    asio::error_code ignored_ec;
-    socket_.shutdown(asio::ip::tcp::socket::shutdown_both, ignored_ec);
-    socket_.close(ignored_ec);
-    has_closed_ = true;
   }
 
   void cancel_timer() {
@@ -502,8 +524,10 @@ class coro_connection : public std::enable_shared_from_this<coro_connection> {
   async_simple::Executor *executor_;
   asio::ip::tcp::socket socket_;
   // FIXME: queue's performance can be imporved.
-  std::deque<std::pair<std::string, std::string>> write_queue_;
-  std::errc resp_err_;
+  std::deque<
+      std::tuple<std::string, std::string, std::function<std::string_view()>>>
+      write_queue_;
+  coro_rpc::errc resp_err_;
   rpc_call_type rpc_call_type_{non_callback};
 
   // if don't get any message in keep_alive_timeout_duration_, the connection

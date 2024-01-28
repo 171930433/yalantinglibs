@@ -10,9 +10,9 @@
 
 [中文版](./website/docs/zh/guide/what_is_yalantinglibs.md)
 
-yaLanTingLibs is a collection of C++20 libraries, now it contains struct_pack, struct_json, struct_xml, struct_yaml, struct_pb, easylog, coro_rpc, coro_http and async_simple, more and more cool libraries will be added into yaLanTingLibs(such as http.) in the future.
+yaLanTingLibs is a collection of modern c++ util libraries, now it contains struct_pack, struct_json, struct_xml, struct_yaml, struct_pb, easylog, coro_rpc, coro_io, coro_http and async_simple, more and more cool libraries will be added into yaLanTingLibs in the future.
 
-The target of yaLanTingLibs: provide very easy and high performance C++20 libraries for C++ developers, it can help to quickly build high performance applications.
+The target of yaLanTingLibs: provide very easy and high performance modern C++ libraries for developers, it can help to quickly build high performance applications.
 
 | OS (Compiler Version)                          | Status                                                                                                    |
 |------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
@@ -25,15 +25,27 @@ The target of yaLanTingLibs: provide very easy and high performance C++20 librar
 # Quick Start
 ## compiler requirements
 
-make sure you have such compilers:
+If your compiler don't support C++20, yalantinglibs will only compile the serialization libraries (struct_pack, struct_json, struct_xml, struct_yaml, easylog support C++17).
+Make sure you have such compilers:
+
+- g++9 above;
+- clang++6 above
+- msvc 14.20 above;
+
+Otherwise, yalantinglibs will compile all the libraries. 
+Make sure you have such compilers:
 
 - g++10 above;
-- clang++13 above (with stdlib = libc++-13/libstdc++-8 or later version); 
+- clang++13 above
 - msvc 14.29 above;
+
+You can also use cmake option `-DENABLE_CPP_20=ON` or `-DENABLE_CPP_20=OFF` to control it.
 
 ## Install & Compile
 
 Yalantinglibs is a head-only library. You can just copy `./include/ylt` directory into your project. But we suggest you use cmake to install it.
+
+### Install
 
 1. clone repo
 
@@ -83,7 +95,31 @@ cmake ..
 cmake --build .
 ```
 
-- Compile Manually:
+### Cmake FetchContent
+
+You can also import ylt by cmake FetchContent
+
+```cmake
+cmake_minimum_required(VERSION 3.15)
+project(ylt_test)
+
+include(FetchContent)
+
+FetchContent_Declare(
+    yalantinglibs
+    GIT_REPOSITORY https://github.com/JYLeeLYJ/yalantinglibs.git
+    GIT_TAG feat/fetch # optional ( default master / main )
+    GIT_SHALLOW 1 # optional ( --depth=1 )
+)
+
+FetchContent_MakeAvailable(yalantinglibs)
+add_executable(main main.cpp)
+
+target_link_libraries(main yalantinglibs::yalantinglibs)
+target_compile_features(main PRIVATE cxx_std_20)
+```
+
+### Compile Manually:
 
 1. Add `include/` directory to include path(skip it if you have install ylt into system default path).
 2. Add `include/ylt/thirdparty` to include path(skip it if you have install thirdparty independency by  the cmake option -DINSTALL_INDEPENDENT_THIRDPARTY=ON).
@@ -91,7 +127,7 @@ cmake --build .
 3. If you use any header with `coro_` prefix, add link option `-pthread` in linux and add option `-fcoroutines` when you use g++.
 4. That's all. We could find other options in `example/cmakelist.txt`.
 
-- More Details:
+### More Details:
 For more details, see the cmake file [here](https://github.com/alibaba/yalantinglibs/blob/main/CMakeLists.txt) and [there](https://github.com/alibaba/yalantinglibs/tree/main/cmake).
 
 # Introduction
@@ -155,7 +191,7 @@ More examples [here](https://github.com/alibaba/yalantinglibs/tree/main/src/coro
 
 Based on compile-time reflection, very easy to use, high performance serialization library, struct_pack is a header only library, it is used by coro_rpc now.
 
-Only one line code to finish serialization and deserialization, 2-50x faster than protobuf.
+Only one line code to finish serialization and deserialization, 2-20x faster than protobuf.
 
 ### quick example
 ```cpp
@@ -175,7 +211,7 @@ std::vector<char> buffer = struct_pack::serialize(person1);
 auto person2 = deserialize<person>(buffer);
 ```
 
-struct_pack is very faster. 
+struct_pack is very fast. 
 
 ![](https://alibaba.github.io/yalantinglibs/assets/struct_pack_bench_serialize.4ffb0ce6.png)
 
@@ -187,7 +223,7 @@ struct_pack is very faster.
 
 [(Video) A Faster Serialization Library Based on Compile-time Reflection and C++ 20](https://www.youtube.com/watch?v=myhB8ZlwOlE)  on cppcon2022
 
-[(Slides)(Chinese)](https://alibaba.github.io/yalantinglibs/resource/struct_pack_introduce_CN.pdf) of struct_pack on purecpp conference.
+[(Slides)(Chinese)](https://alibaba.github.io/yalantinglibs/resource/CppSummit_struct_pack.pdf) of struct_pack on purecpp conference.
 
 [(Video)(Chinese)](https://live.csdn.net/room/csdnlive1/bKFbKP7T) on purecpp conference, start from 01:32:20 of the video record.
 
@@ -435,19 +471,11 @@ No dependency.
 
 No dependency.
 
-### struct_json
-
-- [iguana](https://github.com/qicosmos/iguana)
-
 ### struct_pb (optional)
 
 - [protobuf](https://protobuf.dev/)
 
-### struct_xml
-
-- [iguana](https://github.com/qicosmos/iguana)
-
-### struct_yaml
+### struct_json、struct_xml、struct_yaml
 
 - [iguana](https://github.com/qicosmos/iguana)
 
@@ -471,6 +499,10 @@ see [Build Website](https://github.com/alibaba/yalantinglibs/blob/main/website/R
 3. Create a PR, fill in the PR template.
 4. Choose one or more reviewers from contributors: (e.g., qicosmos, poor-circle, PikachuHyA).
 5. Get approved and merged.
+
+# Discussion group
+
+DingTalk group id: 645010455
 
 ## License
 

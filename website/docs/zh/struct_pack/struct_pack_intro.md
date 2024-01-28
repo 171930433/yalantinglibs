@@ -1,6 +1,6 @@
 # struct_pack简介
 
-struct_pack是一个以零成本抽象，高度易用为特色序列化库。通常情况下只需一行代码即可完成复杂结构体的序列化/反序列化。用户无需定义任何DSL，宏或模板代码，struct_pack可通过编译期反射自动支持对C++结构体的序列化。其综合性能比protobuf，msgpack大幅提升(详细可以看benchmark部分)。
+struct_pack是一个以零成本抽象，高度易用为特色序列化库。通常情况下只需一行代码即可完成复杂结构体的序列化/反序列化。对于聚合类型，用户无需定义任何DSL，宏或模板代码。struct_pack也支持使用宏来自定义非聚合类型的反射。struct_pack可通过编译期反射自动支持对C++结构体的序列化。其综合性能比protobuf，msgpack大幅提升(详细可以看benchmark部分)。
 
 下面，我们以一个简单的对象为例展示struc_pack的基本用法。
 
@@ -87,8 +87,8 @@ assert(person2.value()==person1);
 ```cpp
 // 将结果保存到已有的对象中
 person person2;
-std::errc ec = deserialize_to(person2, buffer);
-assert(ec==std::errc{}); // person2.has_value() == true
+auto ec = deserialize_to(person2, buffer);
+assert(!ec); // no error
 assert(person2==person1);
 ```
 
@@ -166,11 +166,102 @@ assert(nested2)
 assert(nested2==nested1);
 ```
 
+## 对整数启用变长压缩编码
+
+```cpp
+struct rect {
+  int a,b,c,d;
+  constexpr static auto struct_pack_config = struct_pack::ENCODING_WITH_VARINT| struct_pack::USE_FAST_VARINT;
+};
+
+```
+
 ## 自定义功能支持
+
+### 用户自定义反射
+
+有时候用户需要支持非聚合的结构体，或者自定义各字段序列化的顺序，这些可以通过宏函数`STRUCT_PACK_REFL(typename, fieldname1, fieldname2 ...)`来支持。
+
+```cpp
+namespace test {
+class person : std::vector<int> {
+ private:
+  std::string mess;
+
+ public:
+  int age;
+  std::string name;
+  auto operator==(const person& rhs) const {
+    return age == rhs.age && name == rhs.name;
+  }
+  person() = default;
+  person(int age, const std::string& name) : age(age), name(name) {}
+};
+STRUCT_PACK_REFL(person, name, age);
+}
+
+`STRUCT_PACK_REFL(typename, fieldname1, fieldname2 ...)`填入的第一个参数是需要反射的类型名，随后是若干个字段名，代表反射信息的各个字段。
+该宏必须定义在反射的类型所在的命名空间中。
+如果该类型不具有默认构造函数，则无法使用函数`struct_pack::deserialize`,不过你依然可以使用`struct_pack::deserialize_to`来实现反序列化。
+它使得struct_pack可以支持那些非聚合的结构体类型，允许用户自定义构造函数，继承其他类型，添加不序列化的字段等等。
+```
+
+有时，用户需要序列化/反序列化那些private字段，这可以通过函数`STRUCT_PACK_FRIEND_DECL(typenmae)`;来支持。
+```cpp
+namespace example2 {
+class person {
+ private:
+  int age;
+  std::string name;
+
+ public:
+  auto operator==(const person& rhs) const {
+    return age == rhs.age && name == rhs.name;
+  }
+  person() = default;
+  person(int age, const std::string& name) : age(age), name(name) {}
+  STRUCT_PACK_FRIEND_DECL(person);
+};
+STRUCT_PACK_REFL(person, age, name);
+}  // namespace example2
+```
+
+该宏必须声明在结构体内部，其原理是将struct_pack与反射有关的函数注册为友元函数。
+
+用户甚至可以在`STRUCT_PACK_REFL`中注册成员函数，这极大的扩展了struct_pack的灵活性。
+
+```cpp
+namespace example3 {
+class person {
+ private:
+  int age_;
+  std::string name_;
+
+ public:
+  auto operator==(const person& rhs) const {
+    return age_ == rhs.age_ && name_ == rhs.name_;
+  }
+  person() = default;
+  person(int age, const std::string& name) : age_(age), name_(name) {}
+
+  int& age() { return age_; };
+  const int& age() const { return age_; };
+  std::string& name() { return name_; };
+  const std::string& name() const { return name_; };
+};
+STRUCT_PACK_REFL(person, age(), name());
+}  // namespace example3
+
+注册的成员函数必须返回一个引用，并且该函数具有常量和非常量的重载。
+```
 
 ### 自定义类型的序列化
 
 struct_pack支持序列化自定义类型。
+
+#### 该类型可以被抽象为类型系统中已有的类型
+
+例如，假如我们需要序列化一个第三方库的map类型(absl , boost...)：我们只需要保证其符合struct_pack类型系统中对于map的约束即可。
 
 ```cpp
 // We should not inherit from stl container, this case just for testing.
@@ -191,6 +282,104 @@ auto buffer2 = serialize(map2);
 关于自定义类型的更多细节，请见：
 
 [struct_pack的类型系统](https://alibaba.github.io/yalantinglibs/zh/struct_pack/struct_pack_type_system.html)
+
+#### 该类型不能被抽象为类型系统中已有的类型
+
+此时，我们也支持自定义的序列化，用户只需要自定义以下三个函数即可：
+
+1. sp_get_needed_size
+2. sp_serialize_to
+3. sp_deserialize_to
+
+例如，下面是一个支持自定义二维数组类型的序列化/反序列化的例子。
+
+```cpp
+struct array2D {
+  unsigned int x;
+  unsigned int y;
+  float* p;
+  array2D(unsigned int x, unsigned int y) : x(x), y(y) {
+    p = (float*)calloc(1ull * x * y, sizeof(float));
+  }
+  array2D(const array2D&) = delete;
+  array2D(array2D&& o) : x(o.x), y(o.y), p(o.p) { o.p = nullptr; };
+  array2D& operator=(const array2D&) = delete;
+  array2D& operator=(array2D&& o) {
+    x = o.x;
+    y = o.y;
+    p = o.p;
+    o.p = nullptr;
+    return *this;
+  }
+  float& operator()(std::size_t i, std::size_t j) { return p[i * y + j]; }
+  bool operator==(const array2D& o) const {
+    return x == o.x && y == o.y &&
+           memcmp(p, o.p, 1ull * x * y * sizeof(float)) == 0;
+  }
+  array2D() : x(0), y(0), p(nullptr) {}
+  ~array2D() { free(p); }
+};
+
+// 你需要自定义以下函数
+
+// 1. sp_get_needed_size: 预计算序列化长度
+std::size_t sp_get_needed_size(const array2D& ar) {
+  return 2 * struct_pack::get_write_size(ar.x) +
+         struct_pack::get_write_size(ar.p, 1ull * ar.x * ar.y);
+}
+// 2. sp_serialize_to: 将对象序列化到writer
+template </*struct_pack::writer_t*/ typename Writer>
+void sp_serialize_to(Writer& writer, const array2D& ar) {
+  struct_pack::write(writer, ar.x);
+  struct_pack::write(writer, ar.y);
+  struct_pack::write(writer, ar.p, 1ull * ar.x * ar.y);
+}
+// 3. sp_deserialize_to: 从reader反序列化对象
+template </*struct_pack::reader_t*/ typename Reader>
+struct_pack::err_code sp_deserialize_to(Reader& reader, array2D& ar) {
+  if (auto ec = struct_pack::read(reader, ar.x); ec) {
+    return ec;
+  }
+  if (auto ec = struct_pack::read(reader, ar.y); ec) {
+    return ec;
+  }
+  auto length = 1ull * ar.x * ar.y * sizeof(float);
+  if constexpr (struct_pack::checkable_reader_t<Reader>) {
+    if (!reader.check(length)) {  
+      //checkable_reader_t允许我们在读取数据前先检查是否超出长度限制
+      return struct_pack::errc::no_buffer_space;
+    }
+  }
+  ar.p = (float*)malloc(length);
+  auto ec = struct_pack::read(reader, ar.p, 1ull * ar.x * ar.y);
+  if (ec) {
+    free(ar.p);
+  }
+  return ec;
+
+// 4. 默认用于类型检查的字符串就是该类型的名字. 你也可以通过下面的函数来配置
+
+// constexpr std::string_view sp_set_type_name(test*) { return "myarray2D"; }
+
+// 5. 如果你想使用 struct_pack::get_field/struct_pack::get_field_to, 还需要定义下面的函数以跳过自定义类型的反序列化。
+
+// template <typename Reader>
+// struct_pack::err_code sp_deserialize_to_with_skip(Reader& reader, array2D& ar);
+
+}
+
+void user_defined_serialization() {
+  std::vector<my_name_space::array2D> ar;
+  ar.emplace_back(11, 22);
+  ar.emplace_back(114, 514);
+  ar[0](1, 6) = 3.14;
+  ar[1](87, 111) = 2.71;
+  auto buffer = struct_pack::serialize(ar);
+  auto result = struct_pack::deserialize<decltype(ar)>(buffer);
+  assert(result.has_value());
+  assert(ar == result);
+}
+```
 
 ### 序列化到自定义的输出流
 
@@ -268,7 +457,7 @@ auto person2 = struct_pack::deserialize<person>(ifs);
 assert(person2 == person);
 ```
 
-## 支持可变长编码：
+### 支持可变长编码：
 
 ```cpp
 
@@ -277,10 +466,100 @@ assert(person2 == person);
   auto buffer = std::serialize(vec); //zigzag+varint编码
 }
 {
-  std::vector<struct_pack::uint64_t> vec={1,2,3,4,5,6,7,UINT64_MAX};
+  std::vector<struct_pack::var_uint64_t> vec={1,2,3,4,5,6,7,UINT64_MAX};
   auto buffer = std::serialize(vec); //varint编码
 }
+struct rect {
+  int a,b,c,d;
+  constexpr static auto struct_pack_config = struct_pack::ENCODING_WITH_VARINT| struct_pack::USE_FAST_VARINT;
+  // 启用快速变长编码
+};
+
 ```
+
+### 派生类型支持
+
+struct_pack 同样支持序列化/反序列化派生自基类的子类，但需要额外的宏来标记派生关系并自动生成工厂函数。
+
+```cpp
+//    base
+//   /   |
+//  obj1 obj2
+//  |
+//  obj3
+struct base {
+  uint64_t ID;
+  virtual uint32_t get_struct_pack_id()
+      const = 0;  // 必须在基类中声明该函数。
+  virtual ~base(){};
+};
+struct obj1 : public base {
+  std::string name;
+  virtual uint32_t get_struct_pack_id()
+      const override;  // 必须在派生类中声明该函数。
+};
+STRUCT_PACK_REFL(obj1, ID, name);
+struct obj2 : public base {
+  std::array<float, 5> data;
+  virtual uint32_t get_struct_pack_id() const override;
+};
+STRUCT_PACK_REFL(obj2, ID, data);
+struct obj3 : public obj1 {
+  int age;
+  virtual uint32_t get_struct_pack_id() const override;
+};
+STRUCT_PACK_REFL(obj3, ID, name, age);
+
+STRUCT_PACK_DERIVED_DECL(base, obj1, obj2, obj3);
+// 声明基类和派生类之间的继承关系。
+STRUCT_PACK_DERIVED_IMPL(base, obj1, obj2, obj3);
+// 实现get_struct_pack_id函数。
+```
+
+然后用户就可以正常的序列化/反序列化`unique_ptr<base>`类型了。
+```cpp
+  std::vector<std::unique_ptr<base>> data;
+  data.emplace_back(std::make_unique<obj2>());
+  data.emplace_back(std::make_unique<obj1>());
+  data.emplace_back(std::make_unique<obj3>());
+  auto ret = struct_pack::serialize(data);
+  auto result =
+      struct_pack::deserialize<std::vector<std::unique_ptr<base>>>(ret);
+  assert(result.has_value());   // check deserialize ok
+  assert(result->size() == 3);  // check vector size
+```
+用户同样可以序列化任意派生类然后将其反序列化为指向基类的指针。
+```cpp
+  auto ret = struct_pack::serialize(obj3{});
+  auto result =
+      struct_pack::deserialize_derived_class<base, obj1, obj2, obj3>(ret);
+  assert(result.has_value());   // check deserialize ok
+  std::unique_ptr<base> ptr = std::move(result.value());
+  assert(ptr != nullptr);
+```
+
+### ID冲突/哈希冲突
+
+当两个派生类型具有完全相同的字段时，会发生ID冲突，因为struct_pack通过类型哈希来生成ID。两个相同的ID将导致struct_pack无法正确反序列化出对应的派生类。struct_pack会在编译期检查出这样的错误。
+
+此外，任意两个不同的类型也有$2^-32$的概率发生哈希冲突，导致struct_pack无法利用哈希信息检查出类型错误。在Debug模式下，struct_pack默认带有完整类型字符串，以缓解哈希冲突。
+
+用户可以手动给类型打标记来修复这一问题。即给该类型添加成员`constexpr static std::size_t struct_pack_id`并赋一个唯一的初值。如果不想侵入式的修改类的定义，也可以选择在同namespace下添加函数`constexpr std::size_t struct_pack_id(Type*)`。
+
+```cpp
+struct obj1 {
+  std::string name;
+  virtual uint32_t get_struct_pack_id() const;
+};
+STRUCT_PACK_REFL(obj1, name);
+struct obj2 : public obj1 {
+  virtual uint32_t get_struct_pack_id() const override;
+  constexpr static std::size_t struct_pack_id = 114514;
+};
+STRUCT_PACK_REFL(obj2, name);
+```
+
+当添加了该字段/函数后，struct_pack会在类型字符串中加上该ID，从而保证两个类型之间具有不同的类型哈希值，从而解决ID冲突/哈希冲突。
 
 
 ## benchmark

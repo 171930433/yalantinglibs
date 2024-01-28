@@ -10,9 +10,9 @@
 
 [English Version](../../en/guide/what_is_yalantinglibs.md)
 
-yaLanTingLibs 是一个C++20基础工具库的集合, 现在它包括 struct_pack, struct_json, struct_xml, struct_pb, easylog, coro_rpc, coro_http 和 async_simple, 目前我们正在开发并添加更多的新功能。
+yaLanTingLibs 是一个现代C++基础工具库的集合, 现在它包括 struct_pack, struct_json, struct_xml, struct_yaml, struct_pb, easylog, coro_rpc, coro_io, coro_http 和 async_simple, 目前我们正在开发并添加更多的新功能。
 
-yaLanTingLibs 的目标: 为C++开发者提供高性能，极度易用的C++20基础工具库, 帮助用户构建高性能的现代C++应用。
+yaLanTingLibs 的目标: 为C++开发者提供高性能，极度易用的现代C++基础工具库, 帮助用户构建高性能的现代C++应用。
 
 | 测试平台 (编译器版本)                            | 状态                                                                                                   |
 |------------------------------------------------|----------------------------------------------------------------------------------------------------------|
@@ -25,10 +25,23 @@ yaLanTingLibs 的目标: 为C++开发者提供高性能，极度易用的C++20�
 
 ## 编译器要求
 
+如果你的编译器只支持C++17，yalantinglibs 只会编译序列化库。(struct_*系列)
+
+确保你的编译器版本不低于:
+- clang6++ (libstdc++-8 以上)。
+- g++9 或更高版本。
+- msvc 14.20 或更高版本。
+
+
+
+如果你的编译器支持C++20，yalantinglibs会编译全部库。
+
 确保你的编译器版本不低于:
 - clang11++ (libstdc++-8 以上)。
 - g++10 或更高版本。
 - msvc 14.29 或更高版本。
+
+你也可以手动指定Cmake选项`-DENABLE_CPP_20=ON` 或 `-DENABLE_CPP_20=OFF`来控制。
 
 ## 安装&编译
 
@@ -161,7 +174,7 @@ struct_pack是一个基于编译期反射，易用且高性能的序列化库，
 
 [(Video)  A Faster Serialization Library Based on Compile-time Reflection and C++20](https://www.youtube.com/watch?v=myhB8ZlwOlE) CppCon2022 的演讲视频。
 
-[(Slides) 基于编译期反射和模板元编程的序列化库：struct_pack简介](https://alibaba.github.io/yalantinglibs/resource/struct_pack_introduce_CN.pdf) Purecpp的演讲稿。
+[(Slides) 基于编译期反射和模板元编程的序列化库：struct_pack简介](https://alibaba.github.io/yalantinglibs/resource/CppSummit_struct_pack.pdf) Purecpp的演讲稿。
 
 [(Video) 基于编译期反射和模板元编程的序列化库：struct_pack简介](https://live.csdn.net/room/csdnlive1/bKFbKP7T) Purecpp的演讲视频, 从 01:32:20 开始
 
@@ -245,12 +258,39 @@ void basic_usage() {
 
 ## coro_http
 
-coro_http 是一个 C++20 的协程http(https)客户端, 支持: get/post, websocket, multipart file , chunked 和 ranges 请求。
+coro_http 是一个 C++20 的协程http(https)库，包括服务端和客户端, 支持: get/post, websocket, multipart file , chunked 和 ranges 请求。[more examples](https://github.com/alibaba/yalantinglibs/blob/main/src/coro_http/examples/example.cpp)
 
 ### get/post
 ```cpp
+#include "ylt/coro_http/coro_http_server.hpp"
 #include "ylt/coro_http/coro_http_client.hpp"
 using namespace ylt;
+
+async_simple::coro::Lazy<void> basic_usage() {
+  coro_http_server server(1, 9001);
+  server.set_http_handler<GET>(
+      "/get", [](coro_http_request &req, coro_http_response &resp) {
+        resp.set_status_and_content(status_type::ok, "ok");
+      });
+
+  server.set_http_handler<GET>(
+      "/coro",
+      [](coro_http_request &req,
+         coro_http_response &resp) -> async_simple::coro::Lazy<void> {
+        resp.set_status_and_content(status_type::ok, "ok");
+        co_return;
+      });
+  server.aync_start(); // aync_start() don't block, sync_start() will block.
+  std::this_thread::sleep_for(300ms);  // wait for server start
+
+  coro_http_client client{};
+  auto result = co_await client.async_get("http://127.0.0.1:9001/get");
+  assert(result.status == 200);
+  assert(result.resp_body == "ok");
+  for (auto [key, val] : result.resp_headers) {
+    std::cout << key << ": " << val << "\n";
+  }
+}
 
 async_simple::coro::Lazy<void> get_post(coro_http_client &client) {
   std::string uri = "http://www.example.com";
@@ -432,6 +472,14 @@ async_simple是一个C++20协程库，提供各种轻量且易用的组件，帮
 3. 创建一个Pull Request，填写模板中的内容。
 4. 提交Pull Request，并选择审核者: (如： qicosmos, poor-circle, PikachuHyA).
 5. 通过github的全平台测试，审核者完成审核，代码合入主线。
+
+# 讨论组
+
+钉钉群
+
+<center>
+<img src="../../public/img/yalantinglibs_ding_talk_group.png" alt="dingtalk" width="200" height="200" align="bottom" />
+</center>
 
 ## 许可证
 

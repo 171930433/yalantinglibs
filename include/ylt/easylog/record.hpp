@@ -18,6 +18,8 @@
 #include <charconv>
 #include <chrono>
 #include <cstring>
+
+#include "ylt/util/time_util.h"
 #ifdef __linux__
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -52,14 +54,42 @@ enum { ERROR = 0 };
 
 namespace easylog {
 
+namespace detail {
+template <class T>
+constexpr inline bool c_array_v = std::is_array_v<std::remove_cvref_t<T>> &&
+                                  (std::extent_v<std::remove_cvref_t<T>> > 0);
+
+template <typename Type, typename = void>
+struct has_data : std::false_type {};
+
+template <typename T>
+struct has_data<T, std::void_t<decltype(std::declval<T>().data())>>
+    : std::true_type {};
+
+template <typename T>
+constexpr inline bool has_data_v = has_data<std::remove_cvref_t<T>>::value;
+
+template <typename Type, typename = void>
+struct has_str : std::false_type {};
+
+template <typename T>
+struct has_str<T, std::void_t<decltype(std::declval<T>().str())>>
+    : std::true_type {};
+
+template <typename T>
+constexpr inline bool has_str_v = has_str<std::remove_cvref_t<T>>::value;
+}  // namespace detail
+
 enum class Severity {
-  NONE = 0,
-  TRACE = 1,
-  DEBUG = 2,
-  INFO = 3,
-  WARN = 4,
-  ERROR = 5,
-  CRITICAL = 6,
+  NONE,
+  TRACE,
+  DEBUG,
+  INFO,
+  WARN,
+  WARNING = WARN,
+  ERROR,
+  CRITICAL,
+  FATAL = CRITICAL,
 };
 
 inline std::string_view severity_str(Severity severity) {
@@ -117,6 +147,9 @@ class record_t {
       const auto end = jkj::dragonbox::to_chars(data, temp);
       ss_.append(temp, std::distance(temp, end));
     }
+    else if constexpr (std::is_same_v<bool, U>) {
+      data ? ss_.append("true") : ss_.append("false");
+    }
     else if constexpr (std::is_same_v<char, U>) {
       ss_.push_back(data);
     }
@@ -129,24 +162,53 @@ class record_t {
       auto [ptr, ec] = std::to_chars(buf, buf + 32, data);
       ss_.append(buf, std::distance(buf, ptr));
     }
-    else {
+    else if constexpr (std::is_pointer_v<U>) {
+      char buf[32] = {"0x"};
+      auto [ptr, ec] = std::to_chars(buf + 2, buf + 32, (uintptr_t)data, 16);
+      ss_.append(buf, std::distance(buf, ptr));
+    }
+    else if constexpr (std::is_same_v<std::string, U> ||
+                       std::is_same_v<std::string_view, U>) {
+      ss_.append(data.data(), data.size());
+    }
+    else if constexpr (detail::c_array_v<U>) {
       ss_.append(data);
+    }
+    else if constexpr (detail::has_data_v<U>) {
+      ss_.append(data.data());
+    }
+    else if constexpr (detail::has_str_v<U>) {
+      ss_.append(data.str());
+    }
+    else if constexpr (std::is_same_v<std::chrono::system_clock::time_point,
+                                      U>) {
+      ss_.append(ylt::time_util::get_local_time_str(data));
+    }
+    else {
+      std::stringstream ss;
+      ss << data;
+      ss_.append(ss.str());
     }
 
     return *this;
   }
 
   template <typename... Args>
-  record_t &sprintf(const char *fmt, Args... args) {
-    printf_string_format(fmt, args...);
+  record_t &sprintf(const char *fmt, Args &&...args) {
+    printf_string_format(fmt, std::forward<Args>(args)...);
+    return *this;
+  }
 
+  template <typename String>
+  record_t &format(String &&str) {
+    ss_.append(str.data());
     return *this;
   }
 
  private:
   template <typename... Args>
-  void printf_string_format(const char *fmt, Args... args) {
-    size_t size = snprintf(nullptr, 0, fmt, args...);
+  void printf_string_format(const char *fmt, Args &&...args) {
+    size_t size = snprintf(nullptr, 0, fmt, std::forward<Args>(args)...);
 
 #ifdef YLT_ENABLE_PMR
 #if __has_include(<memory_resource>)

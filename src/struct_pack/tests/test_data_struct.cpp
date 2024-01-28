@@ -1,3 +1,4 @@
+#include <bitset>
 #include <memory>
 #include <ylt/struct_pack.hpp>
 
@@ -5,20 +6,19 @@
 #include "test_struct.hpp"
 using namespace struct_pack;
 
-void test_container(auto &v) {
+template <typename T>
+void test_container(T &v) {
   auto ret = serialize(v);
-
-  using T = std::remove_cvref_t<decltype(v)>;
   T v1{};
   auto ec = deserialize_to(v1, ret.data(), ret.size());
-  CHECK(ec == struct_pack::errc{});
+  CHECK(!ec);
   CHECK(v == v1);
 
   v.clear();
   v1.clear();
   ret = serialize(v);
   ec = deserialize_to(v1, ret.data(), ret.size());
-  CHECK(ec == struct_pack::errc{});
+  CHECK(!ec);
   CHECK(v1.empty());
   CHECK(v == v1);
 }
@@ -156,14 +156,13 @@ TEST_CASE("testing nonstd containers") {
     test_container(v);
   }
 }
-
-void test_tuple_like(auto &v) {
+template <typename T>
+void test_tuple_like(T &v) {
   auto ret = serialize(v);
 
-  using T = std::remove_cvref_t<decltype(v)>;
   T v1{};
   auto ec = deserialize_to(v1, ret.data(), ret.size());
-  CHECK(ec == struct_pack::errc{});
+  CHECK(!ec);
   CHECK(v == v1);
 }
 
@@ -202,7 +201,7 @@ TEST_CASE("testing std::array") {
   std::array<person, 2> v3{};
   test_tuple_like(v3);
 }
-
+#if __cplusplus >= 202002L
 TEST_CASE("test_trivial_copy_tuple") {
   tuplet::tuple tp = tuplet::make_tuple(1, 2);
 
@@ -226,11 +225,11 @@ TEST_CASE("test_trivial_copy_tuple") {
 
   std::tuple<int, int> v{};
   auto ec = deserialize_to(v, buf);
-  CHECK(ec != struct_pack::errc{});
+  CHECK(ec);
 
   decltype(tp) tp1;
   auto ec2 = deserialize_to(tp1, buf);
-  CHECK(ec2 == struct_pack::errc{});
+  CHECK(!ec2);
   CHECK(tp == tp1);
 }
 
@@ -247,17 +246,17 @@ TEST_CASE("test_trivial_copy_tuple in an object") {
 
   test_obj obj1;
   auto ec = deserialize_to(obj1, buf);
-  CHECK(ec == struct_pack::errc{});
+  CHECK(!ec);
   CHECK(obj.tp == obj1.tp);
 }
-
-void test_c_array(auto &v) {
+#endif
+template <typename T>
+void test_c_array(T &v) {
   auto ret = serialize(v);
 
-  using T = std::remove_cvref_t<decltype(v)>;
   T v1{};
   auto ec = deserialize_to(v1, ret.data(), ret.size());
-  REQUIRE(ec == struct_pack::errc{});
+  REQUIRE(!ec);
 
   auto size = std::extent_v<T>;
   for (decltype(size) i = 0; i < size; ++i) {
@@ -287,7 +286,7 @@ TEST_CASE("testing enum") {
     auto ret = serialize(e);
     std::size_t sz;
     auto ec = deserialize_to(e2, ret.data(), ret.size(), sz);
-    CHECK(ec == struct_pack::errc{});
+    CHECK(!ec);
     CHECK(sz == ret.size());
     CHECK(e == e2);
   }
@@ -324,7 +323,9 @@ TEST_CASE("testing fundamental types") {
     CHECK(std::unique(ar.begin(), ar.end()) == ar.end());
   }
   {
+#ifdef __cpp_lib_char8_t
     static_assert(get_type_literal<char>() == get_type_literal<char8_t>());
+#endif
     static_assert(get_type_literal<signed char>() ==
                   get_type_literal<int8_t>());
     static_assert(get_type_literal<unsigned char>() ==
@@ -346,14 +347,14 @@ TEST_CASE("test variant") {
     std::variant<int, double> var = 1.4, var2;
     auto ret = struct_pack::serialize(var);
     auto ec = struct_pack::deserialize_to(var2, ret.data(), ret.size());
-    CHECK(ec == struct_pack::errc{});
+    CHECK(!ec);
     CHECK(var2 == var);
   }
   {
     std::variant<int, std::monostate> var = std::monostate{}, var2;
     auto ret = struct_pack::serialize(var);
     auto ec = struct_pack::deserialize_to(var2, ret.data(), ret.size());
-    CHECK(ec == struct_pack::errc{});
+    CHECK(!ec);
     CHECK(var2 == var);
   }
   {
@@ -362,7 +363,7 @@ TEST_CASE("test variant") {
         var2;
     auto ret = struct_pack::serialize(var);
     auto ec = struct_pack::deserialize_to(var2, ret.data(), ret.size());
-    CHECK(ec == struct_pack::errc{});
+    CHECK(!ec);
     CHECK(var2 == var);
     CHECK(var2.index() == 1);
   }
@@ -370,7 +371,7 @@ TEST_CASE("test variant") {
     std::variant<std::monostate, std::string> var{"hello"}, var2;
     auto ret = struct_pack::serialize(var);
     auto ec = struct_pack::deserialize_to(var2, ret.data(), ret.size());
-    CHECK(ec == struct_pack::errc{});
+    CHECK(!ec);
     CHECK(var2 == var);
   }
   {
@@ -397,7 +398,7 @@ TEST_CASE("test variant") {
         big_variant2;
     auto ret = struct_pack::serialize(big_variant);
     auto ec = struct_pack::deserialize_to(big_variant2, ret.data(), ret.size());
-    CHECK(ec == struct_pack::errc{});
+    CHECK(!ec);
     CHECK(big_variant2 == big_variant);
   }
 }
@@ -467,26 +468,26 @@ TEST_CASE("test unique_ptr") {
     CHECK(*ret.value() == "Hello");
   }
   SUBCASE("ptr2person") {
-    auto buffer = struct_pack::serialize(std::make_unique<person>(
-        person{.age = 24, .name = std::string{"name24"}}));
+    auto buffer = struct_pack::serialize(
+        std::make_unique<person>(person{24, std::string{"name24"}}));
     auto ret = deserialize<std::unique_ptr<person>>(buffer);
     CHECK(ret.has_value());
-    CHECK(*ret.value() == person{.age = 24, .name = "name24"});
+    CHECK(*ret.value() == person{24, "name24"});
   }
 
   SUBCASE("ptr2optional") {
-    auto buffer = struct_pack::serialize(std::make_unique<person>(
-        person{.age = 24, .name = std::string{"name24"}}));
+    auto buffer = struct_pack::serialize(
+        std::make_unique<person>(person{24, std::string{"name24"}}));
     auto ret = deserialize<std::optional<person>>(buffer);
     CHECK(ret.has_value());
-    CHECK(*ret.value() == person{.age = 24, .name = "name24"});
+    CHECK(*ret.value() == person{24, "name24"});
   }
   SUBCASE("optional2ptr") {
-    auto buffer = struct_pack::serialize(
-        std::optional<person>{person{.age = 24, .name = "name24"}});
+    auto buffer =
+        struct_pack::serialize(std::optional<person>{person{24, "name24"}});
     auto ret = deserialize<std::unique_ptr<person>>(buffer);
     CHECK(ret.has_value());
-    CHECK(*ret.value() == person{.age = 24, .name = "name24"});
+    CHECK(*ret.value() == person{24, "name24"});
   }
   SUBCASE("error template param") {
     auto buffer = struct_pack::serialize(
@@ -513,11 +514,11 @@ TEST_CASE("test unique_ptr") {
     auto literal = struct_pack::get_type_literal<my_list>();
     std::string_view sv{literal.data(), literal.size()};
     using struct_pack::detail::type_id;
-    CHECK(sv ==
-          std::string{(char)type_id::trivial_class_t, (char)type_id::optional_t,
-                      (char)type_id::circle_flag, (char)129,
-                      (char)type_id::string_t, (char)type_id::char_8_t,
-                      (char)type_id::int32_t, (char)type_id::type_end_flag});
+    CHECK(sv == std::string{(char)type_id::struct_t, (char)type_id::optional_t,
+                            (char)type_id::circle_flag, (char)129,
+                            (char)type_id::string_t, (char)type_id::char_8_t,
+                            (char)type_id::int32_t,
+                            (char)type_id::type_end_flag});
     CHECK(result == list_head);
   }
   SUBCASE("test list(unique_ptr)") {
@@ -539,11 +540,11 @@ TEST_CASE("test unique_ptr") {
     auto literal = struct_pack::get_type_literal<std::unique_ptr<my_list>>();
     std::string_view sv{literal.data(), literal.size()};
     using struct_pack::detail::type_id;
-    CHECK(sv ==
-          std::string{(char)type_id::optional_t, (char)type_id::trivial_class_t,
-                      (char)type_id::circle_flag, (char)129,
-                      (char)type_id::string_t, (char)type_id::char_8_t,
-                      (char)type_id::int32_t, (char)type_id::type_end_flag});
+    CHECK(sv == std::string{(char)type_id::optional_t, (char)type_id::struct_t,
+                            (char)type_id::circle_flag, (char)129,
+                            (char)type_id::string_t, (char)type_id::char_8_t,
+                            (char)type_id::int32_t,
+                            (char)type_id::type_end_flag});
     CHECK(*result.value() == *result.value());
   }
   SUBCASE("test list2") {
@@ -565,12 +566,12 @@ TEST_CASE("test unique_ptr") {
     auto literal = struct_pack::get_type_literal<std::unique_ptr<my_list2>>();
     std::string_view sv{literal.data(), literal.size()};
     using struct_pack::detail::type_id;
-    CHECK(sv == std::string{
-                    (char)type_id::optional_t, (char)type_id::trivial_class_t,
-                    (char)type_id::trivial_class_t, (char)type_id::circle_flag,
-                    (char)130, (char)type_id::string_t, (char)type_id::char_8_t,
-                    (char)type_id::int32_t, (char)type_id::type_end_flag,
-                    (char)type_id::type_end_flag});
+    CHECK(sv == std::string{(char)type_id::optional_t, (char)type_id::struct_t,
+                            (char)type_id::struct_t, (char)type_id::circle_flag,
+                            (char)130, (char)type_id::string_t,
+                            (char)type_id::char_8_t, (char)type_id::int32_t,
+                            (char)type_id::type_end_flag,
+                            (char)type_id::type_end_flag});
     CHECK(*result.value() == *result.value());
   }
   SUBCASE("test tree") {
@@ -578,7 +579,7 @@ TEST_CASE("test unique_ptr") {
     auto sv = std::string_view{literal.data(), literal.size()};
     using struct_pack::detail::type_id;
     CHECK(sv == std::string{
-                    (char)type_id::trivial_class_t, (char)type_id::optional_t,
+                    (char)type_id::struct_t, (char)type_id::optional_t,
                     (char)type_id::circle_flag, (char)129,
                     (char)type_id::optional_t, (char)type_id::circle_flag,
                     (char)129, (char)type_id::string_t, (char)type_id::char_8_t,
@@ -617,5 +618,34 @@ TEST_CASE("test unique_ptr") {
     auto p2 = struct_pack::deserialize<test_unique_ptr>(buffer);
     CHECK(p2.has_value());
     CHECK(p2.value() == p);
+  }
+}
+
+TEST_CASE("test bitset") {
+  SUBCASE("test serialize size") {
+    std::bitset<255> ar;
+    constexpr auto sz =
+        struct_pack::get_needed_size<struct_pack::sp_config::DISABLE_TYPE_INFO>(
+            ar);
+    static_assert(sz.size() == 36);
+  }
+  SUBCASE("test serialize/deserialize") {
+    std::bitset<255> ar;
+    ar.set();
+    auto buffer = struct_pack::serialize(ar);
+    auto result = struct_pack::deserialize<std::bitset<255>>(buffer);
+    CHECK(result.has_value());
+    CHECK(result.value() == ar);
+  }
+  SUBCASE("test type check") {
+    std::bitset<255> ar;
+    auto buffer = struct_pack::serialize(ar);
+    auto result = struct_pack::deserialize<std::bitset<256>>(buffer);
+    CHECK(result.has_value() == false);
+  }
+  SUBCASE("test trivial copy") {
+    std::array<std::bitset<255>, 10> ar;
+    static_assert(
+        struct_pack::detail::is_trivial_serializable<decltype(ar)>::value);
   }
 }

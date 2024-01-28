@@ -1,3 +1,4 @@
+#if __cplusplus >= 202002L
 #include <cassert>
 #include <cstdint>
 #include <functional>
@@ -6,6 +7,7 @@
 #include <string>
 #include <type_traits>
 #include <ylt/struct_pack.hpp>
+#include <ylt/struct_pack/tuple.hpp>
 
 #include "doctest.h"
 
@@ -306,3 +308,4 @@ TEST_CASE("Check tuple decomposition by move") {
   assert(*b == 2);
   assert(c == "Hello, world!");
 }
+#endif

@@ -46,7 +46,8 @@ struct message_pack_sample : public base_sample {
   }
 
  private:
-  void serialize(SampleType sample_type, auto &sample) {
+  template <typename T>
+  void serialize(SampleType sample_type, T &sample) {
     {
       msgpack::pack(buffer_, sample);
       buffer_.clear();
@@ -61,6 +62,7 @@ struct message_pack_sample : public base_sample {
           buffer_.clear();
           msgpack::pack(buffer_, sample);
           no_op(buffer_.data());
+          no_op((char *)&sample);
         }
       }
       ser_time_elapsed_map_.emplace(sample_type, ns);
@@ -68,16 +70,14 @@ struct message_pack_sample : public base_sample {
     buf_size_map_.emplace(sample_type, buffer_.size());
   }
 
-  void deserialize(SampleType sample_type, auto &sample) {
-    using T = std::remove_cvref_t<decltype(sample)>;
-
+  template <typename T>
+  void deserialize(SampleType sample_type, T &sample) {
     // get serialized buffer of sample for deserialize
     buffer_.clear();
     msgpack::pack(buffer_, sample);
 
-    std::vector<msgpack::unpacked> vec;
-    vec.resize(ITERATIONS);
-
+    msgpack::unpacked vec;
+    T val;
     uint64_t ns = 0;
     std::string bench_name =
         name() + " deserialize " + get_sample_name(sample_type);
@@ -85,10 +85,11 @@ struct message_pack_sample : public base_sample {
     {
       ScopedTimer timer(bench_name.data(), ns);
       for (int i = 0; i < ITERATIONS; ++i) {
-        msgpack::unpack(vec[i], buffer_.data(), buffer_.size());
-        vec[i].get().as<T>();
+        msgpack::unpack(vec, buffer_.data(), buffer_.size());
+        val = vec->as<T>();
+        no_op((char *)&val);
+        no_op(buffer_.data());
       }
-      no_op((char *)vec.data());
     }
     deser_time_elapsed_map_.emplace(sample_type, ns);
   }

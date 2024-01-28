@@ -97,13 +97,15 @@ class channel {
     return send_request(std::move(op), config_.pool_config.client_config);
   }
 
+  std::size_t size() const noexcept { return client_pools_.size(); }
+
   static channel create(const std::vector<std::string_view>& hosts,
                         const channel_config& config = {},
                         client_pools_t& client_pools =
                             g_clients_pool<client_t, io_context_pool_t>()) {
     channel ch;
     ch.init(hosts, config, client_pools);
-    return std::move(ch);
+    return ch;
   }
 
  private:

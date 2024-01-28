@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <fstream>
 #include <ratio>
 #include <string_view>
@@ -24,6 +25,11 @@
 #include <type_traits>
 #include <utility>
 #include <variant>
+
+#include "ylt/struct_pack/compatible.hpp"
+#include "ylt/struct_pack/endian_wrapper.hpp"
+#include "ylt/struct_pack/error_code.hpp"
+#include "ylt/struct_pack/reflection.hpp"
 
 #define private public
 #include <ylt/struct_pack.hpp>
@@ -34,7 +40,7 @@
 using namespace struct_pack;
 
 TEST_CASE("testing deserialize") {
-  person p{.age = 32, .name = "tom"};
+  person p{32, "tom"};
   auto ret = serialize(p);
   {
     auto res = deserialize<person>(ret);
@@ -58,14 +64,14 @@ TEST_CASE("testing deserialize") {
   {
     person p2;
     auto res = deserialize_to(p2, ret);
-    CHECK(res == struct_pack::errc{});
+    CHECK(!res);
     CHECK(p2 == p);
   }
   {
     size_t len = 114514;
     person p2;
     auto res = deserialize_to(p2, ret, len);
-    CHECK(res == struct_pack::errc{});
+    CHECK(!res);
     CHECK(p2 == p);
     CHECK(len == ret.size());
   }
@@ -73,7 +79,7 @@ TEST_CASE("testing deserialize") {
     size_t offset = 0;
     person p2;
     auto res = deserialize_to(p2, ret, offset);
-    CHECK(res == struct_pack::errc{});
+    CHECK(!res);
     CHECK(p2 == p);
     CHECK(offset == ret.size());
   }
@@ -109,10 +115,10 @@ TEST_CASE("testing api") {
     serialize_to((char *)my_buffer2.data() + offset, size, p);
     person p1, p2;
     auto ec1 = deserialize_to(p1, my_buffer);
-    CHECK(ec1 == struct_pack::errc{});
+    CHECK(!ec1);
     auto ec2 = deserialize_to(p2, (const char *)my_buffer2.data() + offset,
                               my_buffer2.size() - offset);
-    CHECK(ec2 == struct_pack::errc{});
+    CHECK(!ec2);
     CHECK(p == p1);
     CHECK(p == p2);
   }
@@ -144,7 +150,7 @@ TEST_CASE("testing pack object") {
 
   person p1{};
   auto ec = deserialize_to(p1, ret.data(), ret.size());
-  CHECK(ec == struct_pack::errc{});
+  CHECK(!ec);
   CHECK(p == p1);
 
   CHECK(deserialize_to(p1, ret.data(), 4) ==
@@ -155,25 +161,25 @@ TEST_CASE("testing pack object") {
     ret = serialize(p);
     person p2{};
     ec = deserialize_to(p2, ret.data(), ret.size());
-    CHECK(ec == struct_pack::errc{});
+    CHECK(!ec);
     CHECK(p == p2);
   }
 }
 
-void test_container(auto &v) {
+template <typename T>
+void test_container(T &v) {
   auto ret = serialize(v);
 
-  using T = std::remove_cvref_t<decltype(v)>;
   T v1{};
   auto ec = deserialize_to(v1, ret.data(), ret.size());
-  CHECK(ec == struct_pack::errc{});
+  CHECK(!ec);
   CHECK(v == v1);
 
   v.clear();
   v1.clear();
   ret = serialize(v);
   ec = deserialize_to(v1, ret.data(), ret.size());
-  CHECK(ec == struct_pack::errc{});
+  CHECK(!ec);
   CHECK(v1.empty());
   CHECK(v == v1);
 }
@@ -199,8 +205,23 @@ TEST_CASE("testing exceptions") {
     CHECK(ret3.error() == struct_pack::errc::no_buffer_space);
   }
 }
-
-TEST_CASE("testing serialize/deserialize varadic params") {
+using namespace std::string_literals;
+TEST_CASE("testing serialize/deserialize variadic params") {
+  {
+    person p{24, "Betty"};
+    auto buffer = struct_pack::serialize(p);
+    auto res = struct_pack::deserialize<int, std::string>(buffer);
+    CHECK(res);
+    CHECK(std::get<0>(res.value()) == 24);
+    CHECK(std::get<1>(res.value()) == "Betty");
+  }
+  {
+    person p{24, "Betty"};
+    auto buffer = struct_pack::serialize(24, "Betty"s);
+    auto res = struct_pack::deserialize<person>(buffer);
+    CHECK(res);
+    CHECK(res.value() == p);
+  }
   {
     auto ret = struct_pack::serialize(1, 2, 3, 4, 5);
     auto res = struct_pack::deserialize<std::tuple<int, int, int, int, int>>(
@@ -274,7 +295,7 @@ TEST_CASE("testing serialize/deserialize varadic params") {
     int a[5];
     auto res = struct_pack::deserialize_to(a[0], ret.data(), ret.size(), a[1],
                                            a[2], a[3], a[4]);
-    CHECK(res == struct_pack::errc{});
+    CHECK(!res);
     CHECK(a[0] == 1);
     CHECK(a[1] == 2);
     CHECK(a[2] == 3);
@@ -285,7 +306,7 @@ TEST_CASE("testing serialize/deserialize varadic params") {
     auto ret = struct_pack::serialize(1, 2, 3, 4, 5);
     int a[5];
     auto res = struct_pack::deserialize_to(a[0], ret, a[1], a[2], a[3], a[4]);
-    CHECK(res == struct_pack::errc{});
+    CHECK(!res);
     CHECK(a[0] == 1);
     CHECK(a[1] == 2);
     CHECK(a[2] == 3);
@@ -456,7 +477,7 @@ TEST_CASE("testing serialize/deserialize varadic params") {
         std::get<0>(t), ret.data(), ret.size(), std::get<1>(t), std::get<2>(t),
         std::get<3>(t), std::get<4>(t), std::get<5>(t), std::get<6>(t),
         std::get<7>(t));
-    CHECK(res == struct_pack::errc{});
+    CHECK(!res);
     CHECK(std::get<0>(t) == 42);
     CHECK(std::get<1>(t) == 2.71828f);
     CHECK(std::get<2>(t) == 3.1415926);
@@ -483,7 +504,7 @@ TEST_CASE("testing serialize/deserialize varadic params") {
     auto res = struct_pack::deserialize_to(
         std::get<0>(t), ret, std::get<1>(t), std::get<2>(t), std::get<3>(t),
         std::get<4>(t), std::get<5>(t), std::get<6>(t), std::get<7>(t));
-    CHECK(res == struct_pack::errc{});
+    CHECK(!res);
     CHECK(std::get<0>(t) == 42);
     CHECK(std::get<1>(t) == 2.71828f);
     CHECK(std::get<2>(t) == 3.1415926);
@@ -502,7 +523,7 @@ TEST_CASE("testing deserialization") {
   auto ret = serialize(p);
 
   person p1{};
-  CHECK(deserialize_to(p1, ret.data(), ret.size()) == struct_pack::errc{});
+  CHECK(!deserialize_to(p1, ret.data(), ret.size()));
 }
 
 TEST_CASE("testing deserialization with invalid data") {
@@ -570,22 +591,21 @@ TEST_CASE("test get type code") {
     auto str = get_type_literal<int, int, short>();
     static_assert(str.size() == 5);
     string_literal<char, 5> val{
-        {(char)-2, 1, 1, 7, (char)-1}};  //{'1','1','7'};
+        {(char)-3, 1, 1, 7, (char)-1}};  //{'1','1','7'};
     CHECK(str == val);
 
     auto str1 = get_type_literal<int64_t, uint64_t>();
     static_assert(str1.size() == 4);
-    string_literal<char, 4> val1{{(char)-2, 3, 4, (char)-1}};  //{'3','4'};
+    string_literal<char, 4> val1{{(char)-3, 3, 4, (char)-1}};  //{'3','4'};
     CHECK(str1 == val1);
 
     auto str2 =
         get_type_literal<int64_t, uint64_t, struct_pack::compatible<int32_t>>();
     static_assert(str2.size() == 4);
-    string_literal<char, 4> val2{{(char)-2, 3, 4, (char)-1}};
+    string_literal<char, 4> val2{{(char)-3, 3, 4, (char)-1}};
     CHECK(str2 == val2);
   }
 }
-
 TEST_CASE("testing partial deserialization with index") {
   person p{20, "tom"};
   nested_object nested{};
@@ -595,10 +615,12 @@ TEST_CASE("testing partial deserialization with index") {
   REQUIRE(pair);
   CHECK(pair.value() == "tom");
 
+#if __cplusplus >= 202002L
   auto pair1 =
       get_field<tuplet::tuple<int, std::string>, 0>(ret.data(), ret.size());
-  REQUIRE(pair);
+  REQUIRE(pair1);
   CHECK(pair1.value() == 20);
+#endif
 }
 
 namespace array_test {
@@ -635,13 +657,13 @@ TEST_CASE("array test") {
   {
     ar3[117] = test_str;
     [[maybe_unused]] auto ret = deserialize_to(ar3_1, serialize(ar3));
-    CHECK(ret == struct_pack::errc{});
+    CHECK(!ret);
     CHECK(ar3_1[117] == test_str);
   }
   {
     ar4[15472] = test_str;
     auto ret = deserialize_to(ar4_1, serialize(ar4));
-    CHECK(ret == struct_pack::errc{});
+    CHECK(!ret);
     CHECK(ar4_1[15472] == test_str);
   }
 }
@@ -651,144 +673,132 @@ struct person_with_type_info {
   std::string name;
 };
 
-namespace struct_pack {
-template <>
-constexpr inline auto enable_type_info<person_with_type_info> =
-    type_info_config::enable;
-};
+constexpr inline struct_pack::sp_config set_sp_config(person_with_type_info *) {
+  return sp_config::ENABLE_TYPE_INFO;
+}
 
 struct person_with_no_type_info {
   int age;
   std::string name;
 };
 
-namespace struct_pack {
-template <>
-constexpr inline auto enable_type_info<person_with_no_type_info> =
-    type_info_config::disable;
-};
+constexpr inline struct_pack::sp_config set_sp_config(
+    person_with_no_type_info *) {
+  return sp_config::DISABLE_TYPE_INFO;
+}
 
 TEST_CASE("test type info config") {
   SUBCASE("test_person") {
 #ifdef NDEBUG
     {
-      auto size = get_needed_size(person{.age = 24, .name = "Betty"});
+      auto size = get_needed_size(person{24, "Betty"});
       CHECK(size == 14);
-      auto buffer = serialize(person{.age = 24, .name = "Betty"});
+      auto buffer = serialize(person{24, "Betty"});
       CHECK(buffer.size() == size);
       static_assert(
-          detail::check_if_add_type_literal<serialize_config{}, person>() ==
+          detail::check_if_add_type_literal<sp_config::DEFAULT, person>() ==
           false);
     }
 #else
     {
-      auto size = get_needed_size(person{.age = 24, .name = "Betty"});
+      auto size = get_needed_size(person{24, "Betty"});
       CHECK(size == 21);
-      auto buffer = serialize(person{.age = 24, .name = "Betty"});
+      auto buffer = serialize(person{24, "Betty"});
       CHECK(buffer.size() == size);
       static_assert(
-          detail::check_if_add_type_literal<serialize_config{}, person>() ==
+          detail::check_if_add_type_literal<sp_config::DEFAULT, person>() ==
           true);
     }
 #endif
     {
-      auto size = get_needed_size<serialize_config{type_info_config::disable}>(
-          person{.age = 24, .name = "Betty"});
+      auto size =
+          get_needed_size<sp_config::DISABLE_TYPE_INFO>(person{24, "Betty"});
       CHECK(size == 14);
-      auto buffer = serialize<std::vector<char>,
-                              serialize_config{type_info_config::disable}>(
-          person{.age = 24, .name = "Betty"});
+      auto buffer =
+          serialize<sp_config::DISABLE_TYPE_INFO>(person{24, "Betty"});
       CHECK(buffer.size() == size);
       static_assert(
-          detail::check_if_add_type_literal<
-              serialize_config{type_info_config::disable}, person>() == false);
+          detail::check_if_add_type_literal<sp_config::DISABLE_TYPE_INFO,
+                                            person>() == false);
     }
     {
-      auto size = get_needed_size<serialize_config{type_info_config::enable}>(
-          person{.age = 24, .name = "Betty"});
+      auto size =
+          get_needed_size<sp_config::ENABLE_TYPE_INFO>(person{24, "Betty"});
       CHECK(size == 21);
-      auto buffer = serialize<std::vector<char>,
-                              serialize_config{type_info_config::enable}>(
-          person{.age = 24, .name = "Betty"});
+      auto buffer = serialize<sp_config::ENABLE_TYPE_INFO>(person{24, "Betty"});
       CHECK(buffer.size() == size);
-      static_assert(detail::check_if_add_type_literal<
-                        serialize_config{type_info_config::enable}, person>() ==
-                    true);
+      static_assert(
+          detail::check_if_add_type_literal<sp_config::ENABLE_TYPE_INFO,
+                                            person>() == true);
     }
   }
   SUBCASE("test_person_with_type_info") {
     {
-      auto size =
-          get_needed_size(person_with_type_info{.age = 24, .name = "Betty"});
+      auto size = get_needed_size(person_with_type_info{24, "Betty"});
       CHECK(size == 21);
-      auto buffer =
-          serialize(person_with_type_info{.age = 24, .name = "Betty"});
+      auto buffer = serialize(person_with_type_info{24, "Betty"});
       CHECK(buffer.size() == size);
       static_assert(
-          detail::check_if_add_type_literal<serialize_config{},
+          detail::check_if_add_type_literal<sp_config::DEFAULT,
                                             person_with_type_info>() == true);
     }
     {
-      auto size = get_needed_size<serialize_config{type_info_config::disable}>(
-          person_with_type_info{.age = 24, .name = "Betty"});
+      auto size = get_needed_size<sp_config::DISABLE_TYPE_INFO>(
+          person_with_type_info{24, "Betty"});
       CHECK(size == 14);
-      auto buffer = serialize<std::vector<char>,
-                              serialize_config{type_info_config::disable}>(
-          person_with_type_info{.age = 24, .name = "Betty"});
+      auto buffer = serialize<sp_config::DISABLE_TYPE_INFO>(
+          person_with_type_info{24, "Betty"});
       CHECK(buffer.size() == size);
-      static_assert(detail::check_if_add_type_literal<
-                        serialize_config{type_info_config::disable},
-                        person_with_type_info>() == false);
+      static_assert(
+          detail::check_if_add_type_literal<sp_config::DISABLE_TYPE_INFO,
+                                            person_with_type_info>() == false);
     }
     {
-      auto size = get_needed_size<serialize_config{type_info_config::enable}>(
-          person_with_type_info{.age = 24, .name = "Betty"});
+      auto size = get_needed_size<sp_config::ENABLE_TYPE_INFO>(
+          person_with_type_info{24, "Betty"});
       CHECK(size == 21);
-      auto buffer = serialize<std::vector<char>,
-                              serialize_config{type_info_config::enable}>(
-          person_with_type_info{.age = 24, .name = "Betty"});
+      auto buffer = serialize<sp_config::ENABLE_TYPE_INFO>(
+          person_with_type_info{24, "Betty"});
       CHECK(buffer.size() == size);
-      static_assert(detail::check_if_add_type_literal<
-                        serialize_config{type_info_config::enable},
-                        person_with_type_info>() == true);
+      static_assert(
+          detail::check_if_add_type_literal<sp_config::ENABLE_TYPE_INFO,
+                                            person_with_type_info>() == true);
     }
   }
   SUBCASE("test_person_with_no_type_info") {
     {
-      auto size =
-          get_needed_size(person_with_no_type_info{.age = 24, .name = "Betty"});
+      auto size = get_needed_size(person_with_no_type_info{24, "Betty"});
       CHECK(size == 14);
-      auto buffer =
-          serialize(person_with_no_type_info{.age = 24, .name = "Betty"});
+      auto buffer = serialize(person_with_no_type_info{24, "Betty"});
       CHECK(buffer.size() == size);
       static_assert(
-          detail::check_if_add_type_literal<serialize_config{},
+          detail::check_if_add_type_literal<sp_config::DEFAULT,
                                             person_with_no_type_info>() ==
           false);
     }
     {
-      auto size = get_needed_size<serialize_config{type_info_config::disable}>(
-          person_with_no_type_info{.age = 24, .name = "Betty"});
+      auto size = get_needed_size<sp_config::DISABLE_TYPE_INFO>(
+          person_with_no_type_info{24, "Betty"});
       CHECK(size == 14);
-      auto buffer = serialize<std::vector<char>,
-                              serialize_config{type_info_config::disable}>(
-          person_with_no_type_info{.age = 24, .name = "Betty"});
+      auto buffer = serialize<sp_config::DISABLE_TYPE_INFO>(
+          person_with_no_type_info{24, "Betty"});
       CHECK(buffer.size() == size);
-      static_assert(detail::check_if_add_type_literal<
-                        serialize_config{type_info_config::disable},
-                        person_with_no_type_info>() == false);
+      static_assert(
+          detail::check_if_add_type_literal<sp_config::DISABLE_TYPE_INFO,
+                                            person_with_no_type_info>() ==
+          false);
     }
     {
-      auto size = get_needed_size<serialize_config{type_info_config::enable}>(
-          person_with_no_type_info{.age = 24, .name = "Betty"});
+      auto size = get_needed_size<sp_config::ENABLE_TYPE_INFO>(
+          person_with_no_type_info{24, "Betty"});
       CHECK(size == 21);
-      auto buffer = serialize<std::vector<char>,
-                              serialize_config{type_info_config::enable}>(
-          person_with_no_type_info{.age = 24, .name = "Betty"});
+      auto buffer = serialize<sp_config::ENABLE_TYPE_INFO>(
+          person_with_no_type_info{24, "Betty"});
       CHECK(buffer.size() == size);
-      static_assert(detail::check_if_add_type_literal<
-                        serialize_config{type_info_config::enable},
-                        person_with_no_type_info>() == true);
+      static_assert(
+          detail::check_if_add_type_literal<sp_config::ENABLE_TYPE_INFO,
+                                            person_with_no_type_info>() ==
+          true);
     }
   }
 }
@@ -839,7 +849,7 @@ TEST_CASE("test set_value") {
   detail::memory_reader reader(ret.data(), ret.data() + ret.size());
   detail::unpacker in(reader);
   person p2;
-  struct_pack::errc ec;
+  struct_pack::err_code ec;
   std::string s;
   int v;
   int v2 = -1;
@@ -855,18 +865,17 @@ TEST_CASE("test free functions") {
   CHECK(!buffer.empty());
 
   person p1{};
-  CHECK(deserialize_to(p1, buffer.data(), buffer.size()) ==
-        struct_pack::errc{});
+  CHECK(!deserialize_to(p1, buffer.data(), buffer.size()));
 
   std::optional<int> op1{};
   auto buf1 = serialize(op1);
   std::optional<int> op2{};
-  CHECK(deserialize_to(op2, buf1.data(), buf1.size()) == struct_pack::errc{});
+  CHECK(!deserialize_to(op2, buf1.data(), buf1.size()));
   CHECK(!op2.has_value());
 
   op1 = 42;
   auto buf2 = serialize(op1);
-  CHECK(deserialize_to(op2, buf2.data(), buf2.size()) == struct_pack::errc{});
+  CHECK(!deserialize_to(op2, buf2.data(), buf2.size()));
   CHECK(op2.has_value());
   CHECK(op2.value() == 42);
 
@@ -885,20 +894,14 @@ TEST_CASE("test free functions") {
 TEST_CASE("test variant size_type") {
   {
     std::string str(255, 'A');
-    auto ret =
-        serialize<std::string,
-                  serialize_config{.add_type_info = type_info_config::disable}>(
-            str);
+    auto ret = serialize<sp_config::DISABLE_TYPE_INFO>(str);
     CHECK(ret.size() == 260);
     auto str2 = deserialize<std::string_view>(ret);
     CHECK(str == str2);
   }
   {
     std::string str(256, 'A');
-    auto ret =
-        serialize<std::string,
-                  serialize_config{.add_type_info = type_info_config::disable}>(
-            str);
+    auto ret = serialize<sp_config::DISABLE_TYPE_INFO>(str);
     CHECK(ret[4] == 0b01000);
     CHECK(ret.size() == 263);
     auto str2 = deserialize<std::string_view>(ret);
@@ -907,10 +910,7 @@ TEST_CASE("test variant size_type") {
   }
   {
     std::string str(65535, 'A');
-    auto ret =
-        serialize<std::string,
-                  serialize_config{.add_type_info = type_info_config::disable}>(
-            str);
+    auto ret = serialize<sp_config::DISABLE_TYPE_INFO>(str);
     CHECK(ret[4] == 0b01000);
     CHECK(ret.size() == 65542);
     auto str2 = deserialize<std::string_view>(ret);
@@ -919,10 +919,7 @@ TEST_CASE("test variant size_type") {
   }
   {
     std::string str(65536, 'A');
-    auto ret =
-        serialize<std::string,
-                  serialize_config{.add_type_info = type_info_config::disable}>(
-            str);
+    auto ret = serialize<sp_config::DISABLE_TYPE_INFO>(str);
     CHECK(ret[4] == 0b10000);
     CHECK(ret.size() == 65545);
     auto str2 = deserialize<std::string_view>(ret);
@@ -934,9 +931,7 @@ TEST_CASE("test variant size_type") {
   // {
   //   std::string str((1ull << 32) - 1, 'A');
   //   auto ret =
-  //       serialize<std::string,
-  //                 serialize_config{.add_type_info =
-  //                 type_info_config::disable}>(
+  //       serialize<std::string,sp_config::DISABLE_TYPE_INFO>(
   //           str);
   //   CHECK(ret[4] == 0b10000);
   //   CHECK(ret.size() == (1ull << 32) + 8);
@@ -947,9 +942,7 @@ TEST_CASE("test variant size_type") {
   // {
   //   std::string str((1ull << 32), 'A');
   //   auto ret =
-  //       serialize<std::string,
-  //                 serialize_config{.add_type_info =
-  //                 type_info_config::disable}>(
+  //       serialize<std::string,sp_config::DISABLE_TYPE_INFO>(
   //           str);
   //   CHECK(ret[4] == 0b11000);
   //   CHECK(ret.size() == (1ull << 32) + 13);
@@ -968,8 +961,7 @@ TEST_CASE("test serialize offset") {
   buffer.resize(info.size() + offset);
   serialize_to(buffer.data() + offset, info, p);
   person p2;
-  CHECK(deserialize_to(p2, buffer.data() + offset, info.size()) ==
-        struct_pack::errc{});
+  CHECK(!deserialize_to(p2, buffer.data() + offset, info.size()));
   CHECK(p2 == p);
 
   std::vector<char> buffer2;
@@ -979,8 +971,7 @@ TEST_CASE("test serialize offset") {
   serialize_to_with_offset(buffer2, offset, p);
   CHECK(data_offset + info.size() == buffer2.size());
   person p3;
-  CHECK(deserialize_to(p3, buffer2.data() + data_offset, info.size()) ==
-        struct_pack::errc{});
+  CHECK(!deserialize_to(p3, buffer2.data() + data_offset, info.size()));
   CHECK(p3 == p);
 }
 
@@ -1009,14 +1000,14 @@ TEST_CASE("test de_serialize offset") {
     std::string res;
     auto ec = struct_pack::deserialize_to_with_offset(res, ho.data(), ho.size(),
                                                       offset);
-    CHECK(ec == struct_pack::errc{});
+    CHECK(!ec);
     CHECK(res == hi + std::to_string(i));
     CHECK(offset == sizes[i]);
   }
   for (size_t i = 0, offset = 0; i < 100; ++i) {
     std::string res;
     auto ec = struct_pack::deserialize_to_with_offset(res, ho, offset);
-    CHECK(ec == struct_pack::errc{});
+    CHECK(!ec);
     CHECK(res == hi + std::to_string(i));
     CHECK(offset == sizes[i]);
   }
@@ -1029,11 +1020,11 @@ TEST_CASE("compatible convert to optional") {
   CHECK(b.value() == "hello world");
   CHECK(a.value() == "hello world");
 }
-#if __GNUC__ || __clang__
+#if (__GNUC__ || __clang__) && defined(STRUCT_PACK_ENABLE_INT128)
 struct test_int_128 {
   __int128_t x;
   __uint128_t y;
-  bool operator==(const test_int_128 &) const = default;
+  bool operator==(const test_int_128 &o) const { return x == o.x && y == o.y; }
 };
 
 TEST_CASE("test 128-bit int") {
@@ -1091,7 +1082,7 @@ TEST_CASE("test static span") {
   SUBCASE("test static span<int,4>") {
     {
       std::array<int, 4> ar = {1, 4, 5, 3};
-      span_test s = {.hello = "Hello", .sp = ar};
+      span_test s = {"Hello", ar};
       auto buffer = struct_pack::serialize(s);
       span_test2 s2;
       auto res = struct_pack::deserialize<span_test2>(buffer);
@@ -1101,21 +1092,21 @@ TEST_CASE("test static span") {
     }
     {
       std::array<int, 4> ar = {1, 4, 5, 32}, ar2;
-      span_test s = {.hello = "Hello", .sp = ar};
+      span_test s = {"Hello", ar};
       auto buffer = struct_pack::serialize(s);
-      span_test s2 = {.sp = ar2};
+      span_test s2 = {"", ar2};
       auto ec = struct_pack::deserialize_to(s2, buffer);
-      CHECK(ec == struct_pack::errc{});
+      CHECK(!ec);
       CHECK(s.hello == s2.hello);
       CHECK(ar == ar2);
     }
     {
       std::array<int, 4> ar2;
-      span_test2 s = {.hello = "Hello", .ar = {1, 4, 5, 3}};
+      span_test2 s = {"Hello", {1, 4, 5, 3}};
       auto buffer = struct_pack::serialize(s);
-      span_test s2 = {.sp = ar2};
+      span_test s2 = {"", ar2};
       auto ec = struct_pack::deserialize_to(s2, buffer);
-      CHECK(ec == struct_pack::errc{});
+      CHECK(!ec);
       CHECK(s.hello == s2.hello);
       CHECK(s.ar == ar2);
     }
@@ -1123,7 +1114,7 @@ TEST_CASE("test static span") {
   SUBCASE("test static span<std::string ,4>") {
     {
       std::array<std::string, 4> ar = {"1", "14", "145", "1453"};
-      span_test3 s = {.hello = "Hello", .sp = ar};
+      span_test3 s = {"Hello", ar};
       auto buffer = struct_pack::serialize(s);
       auto res = struct_pack::deserialize<span_test4>(buffer);
       CHECK(res.has_value());
@@ -1132,32 +1123,31 @@ TEST_CASE("test static span") {
     }
     {
       std::array<std::string, 4> ar = {"1", "14", "145", "1453"}, ar2;
-      span_test3 s = {.hello = "Hello", .sp = ar};
+      span_test3 s = {"Hello", ar};
       auto buffer = struct_pack::serialize(s);
-      span_test3 s2 = {.sp = ar2};
+      span_test3 s2 = {"", ar2};
       auto ec = struct_pack::deserialize_to(s2, buffer);
-      CHECK(ec == struct_pack::errc{});
+      CHECK(!ec);
       CHECK(s.hello == s2.hello);
       CHECK(ar == ar2);
     }
     {
       std::array<std::string, 4> ar2;
-      span_test4 s = {.hello = "Hello", .ar = {"1", "14", "145", "1453"}};
+      span_test4 s = {"Hello", {"1", "14", "145", "1453"}};
       auto buffer = struct_pack::serialize(s);
-      span_test3 s2 = {.sp = ar2};
+      span_test3 s2 = {"", ar2};
       auto ec = struct_pack::deserialize_to(s2, buffer);
-      CHECK(ec == struct_pack::errc{});
+      CHECK(!ec);
       CHECK(s.hello == s2.hello);
       CHECK(s.ar == ar2);
     }
   }
   SUBCASE("test static span<person ,4>") {
     {
-      std::array<person, 4> ar = {person{.age = 24, .name = "Betty"},
-                                  person{.age = 241, .name = "Betty2"},
-                                  person{.age = 2414, .name = "Betty3"},
-                                  person{.age = 24141, .name = "Betty4"}};
-      span_test5 s = {.hello = "Hello", .sp = ar};
+      std::array<person, 4> ar = {person{24, "Betty"}, person{241, "Betty2"},
+                                  person{2414, "Betty3"},
+                                  person{24141, "Betty4"}};
+      span_test5 s = {"Hello", ar};
       auto buffer = struct_pack::serialize(s);
       auto res = struct_pack::deserialize<span_test6>(buffer);
       CHECK(res.has_value());
@@ -1165,30 +1155,27 @@ TEST_CASE("test static span") {
       CHECK(res.value().ar == ar);
     }
     {
-      std::array<person, 4> ar = {person{.age = 24, .name = "Betty"},
-                                  person{.age = 241, .name = "Betty2"},
-                                  person{.age = 2414, .name = "Betty3"},
-                                  person{.age = 24141, .name = "Betty4"}},
+      std::array<person, 4> ar = {person{24, "Betty"}, person{241, "Betty2"},
+                                  person{2414, "Betty3"},
+                                  person{24141, "Betty4"}},
                             ar2;
-      span_test5 s = {.hello = "Hello", .sp = ar};
+      span_test5 s = {"Hello", ar};
       auto buffer = struct_pack::serialize(s);
-      span_test5 s2 = {.sp = ar2};
+      span_test5 s2 = {"", ar2};
       auto ec = struct_pack::deserialize_to(s2, buffer);
-      CHECK(ec == struct_pack::errc{});
+      CHECK(!ec);
       CHECK(s.hello == s2.hello);
       CHECK(ar == ar2);
     }
     {
       std::array<person, 4> ar2;
-      span_test6 s = {.hello = "Hello",
-                      .ar = {person{.age = 24, .name = "Betty"},
-                             person{.age = 241, .name = "Betty2"},
-                             person{.age = 2414, .name = "Betty3"},
-                             person{.age = 24141, .name = "Betty4"}}};
+      span_test6 s = {"Hello",
+                      {person{24, "Betty"}, person{241, "Betty2"},
+                       person{2414, "Betty3"}, person{24141, "Betty4"}}};
       auto buffer = struct_pack::serialize(s);
-      span_test5 s2 = {.sp = ar2};
+      span_test5 s2 = {"", ar2};
       auto ec = struct_pack::deserialize_to(s2, buffer);
-      CHECK(ec == struct_pack::errc{});
+      CHECK(!ec);
       CHECK(s.hello == s2.hello);
       CHECK(s.ar == ar2);
     }
@@ -1219,12 +1206,17 @@ struct dspan_test6 {
   std::string hello;
   std::vector<person> ar;
 };
+struct dspan_test7 {
+  std::string hello;
+  std::vector<uint8_t> ar;
+};
 
 TEST_CASE("test dynamic span") {
+#ifdef TEST_IN_LITTLE_ENDIAN
   SUBCASE("test dynamic span<int>") {
     {
       std::vector<int> ar = {1, 4, 5, 3};
-      dspan_test s = {.hello = "Hello", .sp = ar};
+      dspan_test s = {"Hello", ar};
       auto buffer = struct_pack::serialize(s);
       dspan_test2 s2;
       auto res = struct_pack::deserialize<dspan_test2>(buffer);
@@ -1234,20 +1226,20 @@ TEST_CASE("test dynamic span") {
     }
     {
       std::vector<int> ar = {1, 4, 5, 32};
-      dspan_test s = {.hello = "Hello", .sp = ar};
+      dspan_test s = {"Hello", ar};
       auto buffer = struct_pack::serialize(s);
       dspan_test s2;
       auto ec = struct_pack::deserialize_to(s2, buffer);
-      CHECK(ec == struct_pack::errc{});
+      CHECK(!ec);
       CHECK(s.hello == s2.hello);
       CHECK(std::equal(ar.begin(), ar.end(), s2.sp.begin()));
     }
     {
-      dspan_test2 s = {.hello = "Hello", .ar = {1, 4, 5, 3}};
+      dspan_test2 s = {"Hello", {1, 4, 5, 3}};
       auto buffer = struct_pack::serialize(s);
       dspan_test s2;
       auto ec = struct_pack::deserialize_to(s2, buffer);
-      CHECK(ec == struct_pack::errc{});
+      CHECK(!ec);
       CHECK(s.hello == s2.hello);
       CHECK(std::equal(s.ar.begin(), s.ar.end(), s2.sp.begin()));
     }
@@ -1255,7 +1247,7 @@ TEST_CASE("test dynamic span") {
   SUBCASE("test dynamic span<std::string>") {
     {
       std::vector<std::string> ar = {"1", "14", "145", "1453"};
-      dspan_test3 s = {.hello = "Hello", .sp = ar};
+      dspan_test3 s = {"Hello", ar};
       auto buffer = struct_pack::serialize(s);
       auto res = struct_pack::deserialize<dspan_test4>(buffer);
       CHECK(res.has_value());
@@ -1265,11 +1257,10 @@ TEST_CASE("test dynamic span") {
   }
   SUBCASE("test dynamic span<person>") {
     {
-      std::vector<person> ar = {person{.age = 24, .name = "Betty"},
-                                person{.age = 241, .name = "Betty2"},
-                                person{.age = 2414, .name = "Betty3"},
-                                person{.age = 24141, .name = "Betty4"}};
-      dspan_test5 s = {.hello = "Hello", .sp = ar};
+      std::vector<person> ar = {person{24, "Betty"}, person{241, "Betty2"},
+                                person{2414, "Betty3"},
+                                person{24141, "Betty4"}};
+      dspan_test5 s = {"Hello", ar};
       auto buffer = struct_pack::serialize(s);
       auto res = struct_pack::deserialize<dspan_test6>(buffer);
       CHECK(res.has_value());
@@ -1277,6 +1268,126 @@ TEST_CASE("test dynamic span") {
       CHECK(res.value().ar == ar);
     }
   }
+#endif
+  SUBCASE("test dynamic span<uint8_t>") {
+    {
+      std::vector<uint8_t> ar = {1, 2, 132, 214};
+      dspan_test7 s = {"Hello", ar};
+      auto buffer = struct_pack::serialize(s);
+      auto res = struct_pack::deserialize<dspan_test7>(buffer);
+      CHECK(res.has_value());
+      CHECK(res.value().hello == s.hello);
+      CHECK(res.value().ar == ar);
+    }
+  }
+}
+#endif
+
+TEST_CASE("test width too big") {
+  SUBCASE("1") {
+    std::string buffer;
+    buffer.push_back(0b11000);
+    auto result = struct_pack::deserialize<struct_pack::DISABLE_ALL_META_INFO,
+                                           std::string>(buffer);
+    REQUIRE(result.has_value() == false);
+    if constexpr (sizeof(std::size_t) < 8) {
+      CHECK(result.error() ==
+            struct_pack::errc::invalid_width_of_container_length);
+    }
+    else {
+      CHECK(result.error() == struct_pack::errc::no_buffer_space);
+    }
+  }
+  SUBCASE("2") {
+    std::string buffer;
+    buffer.push_back(0b11000);
+    std::size_t len = 0;
+    auto result = struct_pack::deserialize<struct_pack::DISABLE_ALL_META_INFO,
+                                           std::string>(buffer, len);
+    REQUIRE(result.has_value() == false);
+    if constexpr (sizeof(std::size_t) < 8) {
+      CHECK(result.error() ==
+            struct_pack::errc::invalid_width_of_container_length);
+    }
+    else {
+      CHECK(result.error() == struct_pack::errc::no_buffer_space);
+    }
+  }
+  SUBCASE("3") {
+    std::string buffer;
+    buffer.push_back(0b11000);
+    auto result =
+        struct_pack::get_field<std::pair<std::string, std::string>, 0,
+                               struct_pack::DISABLE_ALL_META_INFO>(buffer);
+    REQUIRE(result.has_value() == false);
+    if constexpr (sizeof(std::size_t) < 8) {
+      CHECK(result.error() ==
+            struct_pack::errc::invalid_width_of_container_length);
+    }
+    else {
+      CHECK(result.error() == struct_pack::errc::no_buffer_space);
+    }
+  }
+  SUBCASE("4") {
+    std::string buffer;
+    using T = std::pair<std::string, struct_pack::compatible<int>>;
+    auto code = struct_pack::get_type_code<T>() + 1;
+    buffer.resize(4);
+    if constexpr (!struct_pack::detail::is_system_little_endian) {
+      code = struct_pack::detail::bswap32(code);
+    }
+    memcpy(buffer.data(), &code, sizeof(code));
+    buffer.push_back(0b11);
+    auto result = struct_pack::deserialize<
+        std::pair<std::string, struct_pack::compatible<int>>>(buffer);
+    REQUIRE(result.has_value() == false);
+    if constexpr (sizeof(std::size_t) < 8) {
+      CHECK(result.error() ==
+            struct_pack::errc::invalid_width_of_container_length);
+    }
+    else {
+      CHECK(result.error() == struct_pack::errc::no_buffer_space);
+    }
+  }
 }
 
-#endif
+TEST_CASE("test broken length") {
+  auto buffer =
+      struct_pack::serialize<struct_pack::DISABLE_ALL_META_INFO, std::string>(
+          std::string{"ABCDEFGHIJKL"});
+  if (sizeof(std::size_t) == 8) {
+    buffer[0] = 0b11000;
+    std::size_t i = UINT64_MAX;
+    memcpy(buffer.data() + 1, &i, sizeof(i));
+  }
+  else {
+    buffer[0] = 0b10000;
+    std::size_t i = UINT32_MAX;
+    memcpy(buffer.data() + 1, &i, sizeof(i));
+  }
+  auto result =
+      struct_pack::deserialize<struct_pack::DISABLE_ALL_META_INFO, std::string>(
+          buffer);
+  REQUIRE(result.has_value() == false);
+  CHECK(result.error() == struct_pack::errc::no_buffer_space);
+}
+
+TEST_CASE("test broken length with overflow") {
+  auto buffer =
+      struct_pack::serialize<struct_pack::DISABLE_ALL_META_INFO, std::string>(
+          std::u16string{u"ABCDEFGHIJKL"});
+  if (sizeof(std::size_t) == 8) {
+    buffer[0] = 0b11000;
+    std::size_t i = UINT64_MAX;
+    memcpy(buffer.data() + 1, &i, sizeof(i));
+  }
+  else {
+    buffer[0] = 0b10000;
+    std::size_t i = UINT32_MAX;
+    memcpy(buffer.data() + 1, &i, sizeof(i));
+  }
+  auto result = struct_pack::deserialize<struct_pack::DISABLE_ALL_META_INFO,
+                                         std::u16string>(buffer);
+  REQUIRE(result.has_value() == false);
+  CHECK(result.error() == struct_pack::errc::no_buffer_space);
+}

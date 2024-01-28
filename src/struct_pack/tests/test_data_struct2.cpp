@@ -1,3 +1,5 @@
+#include <climits>
+#include <cstdint>
 #include <ylt/struct_pack.hpp>
 
 #include "doctest.h"
@@ -14,7 +16,7 @@ TEST_CASE("test monostate") {
 #endif
     auto ret = struct_pack::serialize(var);
     auto ec = struct_pack::deserialize_to(var2, ret.data(), ret.size());
-    CHECK(ec == struct_pack::errc{});
+    CHECK(!ec);
     CHECK(var2 == var);
   }
 }
@@ -24,7 +26,7 @@ TEST_CASE("test expected") {
     tl::expected<int, struct_pack::errc> exp{42}, exp2;
     auto ret = serialize(exp);
     auto res = deserialize_to(exp2, ret.data(), ret.size());
-    CHECK(res == struct_pack::errc{});
+    CHECK(!res);
     CHECK(exp2 == exp);
   }
   {
@@ -33,7 +35,7 @@ TEST_CASE("test expected") {
         exp2;
     auto ret = serialize(exp);
     auto res = deserialize_to(exp2, ret.data(), ret.size());
-    CHECK(res == struct_pack::errc{});
+    CHECK(!res);
     CHECK(exp2 == exp);
   }
   {
@@ -43,45 +45,29 @@ TEST_CASE("test expected") {
 
     auto ret = serialize(exp);
     auto res = deserialize_to(exp2, ret.data(), ret.size());
-    CHECK(res == struct_pack::errc{});
+    CHECK(!res);
     CHECK(exp2 == exp);
   }
 }
 
 TEST_CASE("testing object with containers, enum, tuple array, and pair") {
-  complicated_object v{
-      .color = Color::red,
-      .a = 42,
-      .b = "hello",
-      .c = {{20, "tom"}, {22, "jerry"}},
-      .d = {"hello", "world"},
-      .e = {1, 2},
-      .f = {{1, {20, "tom"}}},
-      .g = {{1, {20, "tom"}}, {1, {22, "jerry"}}},
-      .h = {"aa", "bb"},
-      .i = {1, 2},
-      .j = {{1, {20, "tom"}}, {1, {22, "jerry"}}},
-      .k = {{1, 2}, {1, 3}},
-      .m = {person{20, "tom"}, {22, "jerry"}},
-      .n = {person{20, "tom"}, {22, "jerry"}},
-      .o = std::make_pair("aa", person{20, "tom"}),
-  };
+  complicated_object v = create_complicated_object();
   auto ret = serialize(v);
 
   complicated_object v1{};
   auto ec = deserialize_to(v1, ret.data(), ret.size());
-  CHECK(ec == struct_pack::errc{});
+  CHECK(!ec);
   CHECK(v.a == v1.a);
 
   CHECK(v == v1);
 
   SUBCASE("test nested object") {
-    nested_object nested{.id = 2, .name = "tom", .p = {20, "tom"}, .o = v};
+    nested_object nested{2, "tom", {20, "tom"}, v};
     ret = serialize(nested);
 
     nested_object nested1{};
     auto ec = deserialize_to(nested1, ret.data(), ret.size());
-    CHECK(ec == struct_pack::errc{});
+    CHECK(!ec);
     CHECK(nested == nested1);
   }
 
@@ -90,7 +76,7 @@ TEST_CASE("testing object with containers, enum, tuple array, and pair") {
     complicated_object v1{};
     auto ec = deserialize_to(v1, ret.data(), ret.size());
     auto pair = get_field<complicated_object, 2>(ret.data(), ret.size());
-    CHECK(ec == struct_pack::errc{});
+    CHECK(!ec);
     CHECK(pair);
     CHECK(pair.value() == "hello");
     pair = get_field<complicated_object, 2>(ret);
@@ -112,17 +98,17 @@ TEST_CASE("testing object with containers, enum, tuple array, and pair") {
   SUBCASE("test get_field_to") {
     std::string res1;
     auto ec = get_field_to<complicated_object, 2>(res1, ret.data(), ret.size());
-    CHECK(ec == struct_pack::errc{});
+    CHECK(!ec);
     CHECK(res1 == "hello");
     ec = get_field_to<complicated_object, 2>(res1, ret);
-    CHECK(ec == struct_pack::errc{});
+    CHECK(!ec);
     CHECK(res1 == "hello");
     std::pair<std::string, person> res2;
     ec = get_field_to<complicated_object, 14>(res2, ret.data(), ret.size());
-    CHECK(ec == struct_pack::errc{});
+    CHECK(!ec);
     CHECK(res2 == v.o);
     ec = get_field_to<complicated_object, 14>(res2, ret);
-    CHECK(ec == struct_pack::errc{});
+    CHECK(!ec);
     CHECK(res2 == v.o);
 
     auto res = get_field_to<complicated_object, 14>(res2, ret.data(), 24);
@@ -139,6 +125,15 @@ TEST_CASE("testing string_view deserialize") {
     CHECK(res);
     CHECK(res.value() == "hello"sv);
   }
+#ifdef TEST_IN_LITTLE_ENDIAN
+  {
+    auto sv = std::wstring_view(L"你好, struct pack");
+    auto ret = serialize(sv);
+    std::wstring str;
+    auto ec = deserialize_to(str, ret.data(), ret.size());
+    REQUIRE(!ec);
+    CHECK(str == sv);
+  }
   {
     std::u32string_view sv = U"你好";
     auto ret = serialize(sv);
@@ -153,6 +148,8 @@ TEST_CASE("testing string_view deserialize") {
     CHECK(res);
     CHECK(res.value() == sv);
   }
+#endif
+#if __cpp_char8_t >= 201811L
   {
     std::u8string_view sv = u8"你好";
     auto ret = serialize(sv);
@@ -160,33 +157,7 @@ TEST_CASE("testing string_view deserialize") {
     CHECK(res);
     CHECK(res.value() == sv);
   }
-  {
-    auto ret = serialize("hello"s);
-    auto res = deserialize<string_view>(ret.data(), ret.size());
-    CHECK(res);
-    CHECK(res.value() == "hello"sv);
-  }
-  {
-    std::u32string sv = U"你好";
-    auto ret = serialize(sv);
-    auto res = deserialize<std::u32string_view>(ret.data(), ret.size());
-    CHECK(res);
-    CHECK(res.value() == sv);
-  }
-  {
-    std::u16string sv = u"你好";
-    auto ret = serialize(sv);
-    auto res = deserialize<std::u16string_view>(ret.data(), ret.size());
-    CHECK(res);
-    CHECK(res.value() == sv);
-  }
-  {
-    std::u8string sv = u8"你好";
-    auto ret = serialize(sv);
-    auto res = deserialize<std::u8string_view>(ret.data(), ret.size());
-    CHECK(res);
-    CHECK(res.value() == sv);
-  }
+#endif
 }
 
 TEST_CASE("test wide string") {
@@ -196,23 +167,25 @@ TEST_CASE("test wide string") {
     auto ret = serialize(sv);
     std::wstring str;
     auto ec = deserialize_to(str, ret.data(), ret.size());
-    REQUIRE(ec == struct_pack::errc{});
+    REQUIRE(!ec);
     CHECK(str == sv);
   }
+#if __cpp_char8_t >= 201811L
   {
     auto sv = std::u8string(u8"你好, struct pack");
     auto ret = serialize(sv);
     std::u8string str;
     auto ec = deserialize_to(str, ret.data(), ret.size());
-    REQUIRE(ec == struct_pack::errc{});
+    REQUIRE(!ec);
     CHECK(str == sv);
   }
+#endif
   {
     auto sv = std::u16string(u"你好, struct pack");
     auto ret = serialize(sv);
     std::u16string str;
     auto ec = deserialize_to(str, ret.data(), ret.size());
-    REQUIRE(ec == struct_pack::errc{});
+    REQUIRE(!ec);
     CHECK(str == sv);
   }
   {
@@ -220,50 +193,7 @@ TEST_CASE("test wide string") {
     auto ret = serialize(sv);
     std::u32string str;
     auto ec = deserialize_to(str, ret.data(), ret.size());
-    REQUIRE(ec == struct_pack::errc{});
-    CHECK(str == sv);
-  }
-}
-
-TEST_CASE("test string_view") {
-  using namespace std;
-  {
-    auto ret = serialize("hello struct pack"sv);
-    std::string str;
-    auto ec = deserialize_to(str, ret.data(), ret.size());
-    REQUIRE(ec == struct_pack::errc{});
-    CHECK(str == "hello struct pack"sv);
-  }
-  {
-    auto sv = std::wstring_view(L"你好, struct pack");
-    auto ret = serialize(sv);
-    std::wstring str;
-    auto ec = deserialize_to(str, ret.data(), ret.size());
-    REQUIRE(ec == struct_pack::errc{});
-    CHECK(str == sv);
-  }
-  {
-    auto sv = std::u8string_view(u8"你好, struct pack");
-    auto ret = serialize(sv);
-    std::u8string str;
-    auto ec = deserialize_to(str, ret.data(), ret.size());
-    REQUIRE(ec == struct_pack::errc{});
-    CHECK(str == sv);
-  }
-  {
-    auto sv = std::u16string_view(u"你好, struct pack");
-    auto ret = serialize(sv);
-    std::u16string str;
-    auto ec = deserialize_to(str, ret.data(), ret.size());
-    REQUIRE(ec == struct_pack::errc{});
-    CHECK(str == sv);
-  }
-  {
-    auto sv = std::u32string_view(U"你好, struct pack");
-    auto ret = serialize(sv);
-    std::u32string str;
-    auto ec = deserialize_to(str, ret.data(), ret.size());
-    REQUIRE(ec == struct_pack::errc{});
+    REQUIRE(!ec);
     CHECK(str == sv);
   }
 }
@@ -273,49 +203,51 @@ TEST_CASE("char test") {
     char ch = '1', ch2;
     auto ret = serialize(ch);
     auto ec = deserialize_to(ch2, ret.data(), ret.size());
-    REQUIRE(ec == struct_pack::errc{});
+    REQUIRE(!ec);
     CHECK(ch == ch2);
   }
   {
     signed char ch = '1', ch2;
     auto ret = serialize(ch);
     auto ec = deserialize_to(ch2, ret.data(), ret.size());
-    REQUIRE(ec == struct_pack::errc{});
+    REQUIRE(!ec);
     CHECK(ch == ch2);
   }
   {
     unsigned char ch = '1', ch2;
     auto ret = serialize(ch);
     auto ec = deserialize_to(ch2, ret.data(), ret.size());
-    REQUIRE(ec == struct_pack::errc{});
+    REQUIRE(!ec);
     CHECK(ch == ch2);
   }
   {
     wchar_t ch = L'1', ch2;
     auto ret = serialize(ch);
     auto ec = deserialize_to(ch2, ret.data(), ret.size());
-    REQUIRE(ec == struct_pack::errc{});
+    REQUIRE(!ec);
     CHECK(ch == ch2);
   }
+#ifdef __cpp_lib_char8_t
   {
     char8_t ch = u8'1', ch2;
     auto ret = serialize(ch);
     auto ec = deserialize_to(ch2, ret.data(), ret.size());
-    REQUIRE(ec == struct_pack::errc{});
+    REQUIRE(!ec);
     CHECK(ch == ch2);
   }
+#endif
   {
     char16_t ch = u'1', ch2;
     auto ret = serialize(ch);
     auto ec = deserialize_to(ch2, ret.data(), ret.size());
-    REQUIRE(ec == struct_pack::errc{});
+    REQUIRE(!ec);
     CHECK(ch == ch2);
   }
   {
     char32_t ch = U'1', ch2;
     auto ret = serialize(ch);
     auto ec = deserialize_to(ch2, ret.data(), ret.size());
-    REQUIRE(ec == struct_pack::errc{});
+    REQUIRE(!ec);
     CHECK(ch == ch2);
   }
 }
@@ -325,7 +257,7 @@ TEST_CASE("test deque") {
   auto ret = struct_pack::serialize(raw);
   std::deque<int> res;
   auto ec = struct_pack::deserialize_to(res, ret.data(), ret.size());
-  CHECK(ec == struct_pack::errc{});
+  CHECK(!ec);
   CHECK(raw == res);
 }
 
@@ -362,23 +294,121 @@ struct Node {
   uint32_t UInt32Value;
   uint64_t UInt64Value;
   std::list<Node> Values;  // Recursive member
-  friend bool operator==(const Node& a, const Node& b) = default;
+  friend bool operator==(const Node& a, const Node& b) {
+    return a.Type == b.Type && a.IsArray == b.IsArray &&
+           a.Dimensions == b.Dimensions && a.IsStructure == b.IsStructure &&
+           a.TypeName == b.TypeName && a.Index == b.Index &&
+           a.BoolValue == b.BoolValue && a.StringValue == b.StringValue &&
+           a.FloatValue == b.FloatValue && a.DoubleValue == b.DoubleValue &&
+           a.Int16Value == b.Int16Value && a.Int32Value == b.Int32Value &&
+           a.Int64Value == b.Int64Value && a.UInt16Value == b.UInt16Value &&
+           a.UInt32Value == b.UInt32Value && a.UInt64Value == b.UInt64Value &&
+           a.Values == b.Values;
+  }
 };
 
 TEST_CASE("testing recursive type") {
-  Node node = {.Type = 1,
-               .IsArray = false,
-               .Dimensions = {1, 2, 3},
-               .IsStructure = true,
-               .TypeName = "Hello",
-               .Index = 1141,
-               .Values = {
-                   Node{.Type = 1, .Index = 2},
-                   Node{.Type = 3, .Index = 7, .Values = {Node{.Index = 41}}},
-                   Node{.Type = 1, .Index = 2, .Values = {Node{.Index = 41}}},
-                   Node{.Type = 1,
-                        .Index = 2,
-                        .Values = {Node{.Index = 41, .Values = {}}}},
+  Node node = {1,
+               false,
+               {1, 2, 3},
+               true,
+               "Hello",
+               1141,
+               true,
+               "1",
+               1.2,
+               1.23,
+               1,
+               2,
+               3,
+               4,
+               5,
+               6,
+               {
+                   Node{1,
+                        false,
+                        {1, 2, 3},
+                        true,
+                        "Hello",
+                        1141,
+                        true,
+                        "1",
+                        1.2,
+                        1.23,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        {}},
+                   Node{1,
+                        false,
+                        {1, 2, 3},
+                        true,
+                        "Hello",
+                        1141,
+                        true,
+                        "1",
+                        1.2,
+                        1.23,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        {}},
+                   Node{1,
+                        false,
+                        {1, 2, 3},
+                        true,
+                        "Hello",
+                        1141,
+                        true,
+                        "1",
+                        1.2,
+                        1.23,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        {}},
+                   Node{1,
+                        false,
+                        {1, 2, 3},
+                        true,
+                        "Hello",
+                        1141,
+                        true,
+                        "1",
+                        1.2,
+                        1.23,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        {Node{1,
+                              false,
+                              {1, 2, 3},
+                              true,
+                              "Hello",
+                              1141,
+                              true,
+                              "1",
+                              1.2,
+                              1.23,
+                              1,
+                              2,
+                              3,
+                              4,
+                              5,
+                              6,
+                              {Node{}}}}},
                }};
   auto buffer = struct_pack::serialize(node);
   auto node2 = struct_pack::deserialize<Node>(buffer);
@@ -478,38 +508,33 @@ bool test_equal(const trival_test::A_v3& v1, const trival_test::A_v3& v2) {
             (v1.b->b.b.b.a == v2.b->b.b.b.a && v1.b->b.b.b.c == v2.b->b.b.b.c &&
              v1.b->b.b.b.d == v2.b->b.b.b.d))));
 }
-
+#ifdef TEST_IN_LITTLE_ENDIAN
 TEST_CASE("testing trivial_view type") {
   trival_test::A_v1 a_v1 = {
-      .a = 'A',
-      .b = {.a = 123.12,
-            .b = {.a = 1232132,
-                  .b = {.a = 12331,
-                        .b = {.a = 'G', .b = 114515, .c = 'A', .d = 104},
+      'A',
+      {123.12,
+       {1232132,
+        {12331,
+         {'G', 114515, 'A', 104},
 
-                        .d = 104.1423,
-                        .c = 'B'},
-                  .d = 'A',
-                  .c = 'C'},
-            .d = {123, 3214, 2134, 3214, 1324, 3214890, 184320, 832140, 321984},
-            .c = 'D'},
-      .c = 'E'};
-  trival_test::A_v2 a_v2 = {.a = 'A',
-                            .b = {.a = 123.12,
-                                  .b = {.a = 1232132,
-                                        .b = {.a = 12331,
-                                              .b = {.a = 'G',
-                                                    .b = 114515,
-                                                    .c = 'A',
-                                                    .d = a_v1.b.b.b.b.d},
-                                              .d = a_v1.b.b.b.d,
-                                              .c = 'B'},
-                                        .d = a_v1.b.b.d,
-                                        .c = 'C'},
-                                  .d = a_v1.b.d,
-                                  .c = 'D'},
-                            .c = 'E'};
-  trival_test::A_v3 a_v3 = {.a = 'A', .b = a_v1.b, .c = 'E'};
+         104.1423,
+         'B'},
+        'A',
+        'C'},
+       {123, 3214, 2134, 3214, 1324, 3214890, 184320, 832140, 321984},
+       'D'},
+      'E'};
+  trival_test::A_v2 a_v2 = {
+      'A',
+      {123.12,
+       {1232132,
+        {12331, {'G', 114515, 'A', a_v1.b.b.b.b.d}, a_v1.b.b.b.d, 'B'},
+        a_v1.b.b.d,
+        'C'},
+       a_v1.b.d,
+       'D'},
+      'E'};
+  trival_test::A_v3 a_v3 = {'A', a_v1.b, 'E'};
   {
     std::vector<char> buffer = struct_pack::serialize(a_v1);
     auto result = struct_pack::deserialize<trival_test::A_v1>(buffer);
@@ -556,3 +581,36 @@ TEST_CASE("testing trivial_view type") {
     CHECK(test_equal(result.value(), a_v3));
   }
 };
+#endif
+
+struct long_test {
+  long hi = -1;
+  unsigned long hi2 = ULONG_MAX;
+};
+
+struct long_test2 {
+  int64_t hi = -1;
+  uint64_t hi2 = UINT64_MAX;
+};
+
+struct long_test3 {
+  int32_t hi = -1;
+  uint32_t hi2 = UINT32_MAX;
+};
+
+TEST_CASE("testing long type") {
+  if constexpr (sizeof(long) == 8) {
+    auto buffer = struct_pack::serialize(long_test{});
+    auto result = struct_pack::deserialize<long_test2>(buffer);
+    CHECK(result.has_value());
+    CHECK(result->hi == -1);
+    CHECK(result->hi2 == ULONG_MAX);
+  }
+  else if constexpr (sizeof(long) == 4) {
+    auto buffer = struct_pack::serialize(long_test{});
+    auto result = struct_pack::deserialize<long_test3>(buffer);
+    CHECK(result.has_value());
+    CHECK(result->hi == -1);
+    CHECK(result->hi2 == ULONG_MAX);
+  }
+}

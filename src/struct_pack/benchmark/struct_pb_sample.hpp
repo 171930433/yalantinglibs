@@ -8,7 +8,7 @@
 #include "no_op.h"
 #include "sample.hpp"
 
-#ifdef HAVE_PROTOBUF 
+#ifdef HAVE_PROTOBUF
 #include "data_def.struct_pb.h"
 #endif
 
@@ -17,7 +17,7 @@ namespace struct_pb_sample {
 inline auto create_rects(std::size_t object_count) {
   rect32s rcs;
   for (int i = 0; i < object_count; ++i) {
-    rect32 rc{.x = 1, .y = 11, .width = 1111, .height = 111111};
+    rect32 rc{1, 0, 11, 1};
     rcs.rect32_list.emplace_back(rc);
   }
   return rcs;
@@ -25,7 +25,10 @@ inline auto create_rects(std::size_t object_count) {
 inline auto create_persons(std::size_t object_count) {
   persons ps;
   for (int i = 0; i < object_count; ++i) {
-    person p{.id = 432798, .name = "tom", .age = 24, .salary = 65536.42};
+    person p{.id = 432798,
+             .name = std::string(1024, 'A'),
+             .age = 24,
+             .salary = 65536.42};
     ps.person_list.emplace_back(p);
   }
   return ps;
@@ -116,7 +119,8 @@ struct struct_pb_sample_t : public base_sample {
   }
 
  private:
-  void serialize(SampleType sample_type, auto& sample) {
+  template <typename T>
+  void serialize(SampleType sample_type, T& sample) {
     auto sz = struct_pb::internal::get_needed_size(sample);
     buffer_.resize(sz);
     struct_pb::internal::serialize_to(buffer_.data(), buffer_.size(), sample);
@@ -136,6 +140,7 @@ struct struct_pb_sample_t : public base_sample {
         struct_pb::internal::serialize_to(buffer_.data(), buffer_.size(),
                                           sample);
         no_op(buffer_);
+        no_op((char*)&sample);
       }
     }
 
@@ -143,15 +148,15 @@ struct struct_pb_sample_t : public base_sample {
     buf_size_map_.emplace(sample_type, buffer_.size());
   }
 
-  void deserialize(SampleType sample_type, auto& sample) {
-    using T = std::remove_cvref_t<decltype(sample)>;
+  template <typename T>
+  void deserialize(SampleType sample_type, T& sample) {
     buffer_.clear();
     auto sz = struct_pb::internal::get_needed_size(sample);
     buffer_.resize(sz);
     struct_pb::internal::serialize_to(buffer_.data(), buffer_.size(), sample);
 
-    std::vector<T> vec;
-    vec.resize(ITERATIONS);
+    T obj;
+    // vec.resize(ITERATIONS);
 
     uint64_t ns = 0;
     std::string bench_name =
@@ -161,10 +166,11 @@ struct struct_pb_sample_t : public base_sample {
       ScopedTimer timer(bench_name.data(), ns);
       for (int i = 0; i < ITERATIONS; ++i) {
         [[maybe_unused]] auto ok = struct_pb::internal::deserialize_to(
-            vec[i], buffer_.data(), buffer_.size());
+            obj, buffer_.data(), buffer_.size());
         assert(ok);
+        no_op((char*)&obj);
+        no_op(buffer_);
       }
-      no_op((char*)vec.data());
     }
     deser_time_elapsed_map_.emplace(sample_type, ns);
 

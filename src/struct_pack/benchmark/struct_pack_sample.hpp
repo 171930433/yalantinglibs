@@ -11,8 +11,17 @@
 #include "sample.hpp"
 
 inline auto create_rects(size_t object_count) {
-  rect<int32_t> rc{1, 11, 1111, 111111};
+  rect<int32_t> rc{1, 0, 11, 1};
   std::vector<rect<int32_t>> v{};
+  for (std::size_t i = 0; i < object_count; i++) {
+    v.push_back(rc);
+  }
+  return v;
+}
+
+inline auto create_rect2s(size_t object_count) {
+  rect2<int32_t> rc{1, 0, 11, 1};
+  std::vector<rect2<int32_t>> v{};
   for (std::size_t i = 0; i < object_count; i++) {
     v.push_back(rc);
   }
@@ -21,7 +30,7 @@ inline auto create_rects(size_t object_count) {
 
 inline auto create_persons(size_t object_count) {
   std::vector<person> v{};
-  person p{.id = 432798, .name = "tom", .age = 24, .salary = 65536.42};
+  person p{432798, std::string(1024, 'A'), 24, 65536.42};
   for (std::size_t i = 0; i < object_count; i++) {
     v.push_back(p);
   }
@@ -31,27 +40,27 @@ inline auto create_persons(size_t object_count) {
 inline std::vector<Monster> create_monsters(size_t object_count) {
   std::vector<Monster> v{};
   Monster m = {
-      .pos = {1, 2, 3},
-      .mana = 16,
-      .hp = 24,
-      .name = "it is a test",
-      .inventory = "\1\2\3\4",
-      .color = Color::Red,
-      .weapons = {{"gun", 42}, {"shotgun", 56}},
-      .equipped = {"air craft", 67},
-      .path = {{7, 8, 9}, {71, 81, 91}},
+      {1, 2, 3},
+      16,
+      24,
+      "it is a test",
+      "\1\2\3\4",
+      Color::Red,
+      {{"gun", 42}, {"shotgun", 56}},
+      {"air craft", 67},
+      {{7, 8, 9}, {71, 81, 91}},
   };
 
   Monster m1 = {
-      .pos = {11, 22, 33},
-      .mana = 161,
-      .hp = 241,
-      .name = "it is a test, ok",
-      .inventory = "\24\25\26\24",
-      .color = Color::Red,
-      .weapons = {{"gun", 421}, {"shotgun", 561}},
-      .equipped = {"air craft", 671},
-      .path = {{71, 82, 93}, {711, 821, 931}},
+      {11, 22, 33},
+      161,
+      241,
+      "it is a test, ok",
+      "\24\25\26\24",
+      Color::Red,
+      {{"gun", 421}, {"shotgun", 561}},
+      {"air craft", 671},
+      {{71, 82, 93}, {711, 821, 931}},
   };
 
   for (std::size_t i = 0; i < object_count / 2; i++) {
@@ -74,11 +83,14 @@ struct struct_pack_sample : public base_sample {
     rects_ = create_rects(OBJECT_COUNT);
     persons_ = create_persons(OBJECT_COUNT);
     monsters_ = create_monsters(OBJECT_COUNT);
+    rect2s_ = create_rect2s(OBJECT_COUNT);
   }
 
   void do_serialization() override {
     serialize(SampleType::RECT, rects_[0]);
     serialize(SampleType::RECTS, rects_);
+    serialize(SampleType::VAR_RECT, rect2s_[0]);
+    serialize(SampleType::VAR_RECTS, rect2s_);
     serialize(SampleType::PERSON, persons_[0]);
     serialize(SampleType::PERSONS, persons_);
     serialize(SampleType::MONSTER, monsters_[0]);
@@ -88,14 +100,27 @@ struct struct_pack_sample : public base_sample {
   void do_deserialization() override {
     deserialize(SampleType::RECT, rects_[0]);
     deserialize(SampleType::RECTS, rects_);
+    deserialize(SampleType::VAR_RECT, rect2s_[0]);
+    deserialize(SampleType::VAR_RECTS, rect2s_);
+#if __cpp_lib_span >= 202002L
+    auto sp = std::span{rects_};
+    deserialize(SampleType::ZC_RECTS, sp);
+#endif
     deserialize(SampleType::PERSON, persons_[0]);
     deserialize(SampleType::PERSONS, persons_);
+    deserialize<std::vector<person>, std::vector<zc_person>>(
+        SampleType::ZC_PERSONS, persons_);
     deserialize(SampleType::MONSTER, monsters_[0]);
     deserialize(SampleType::MONSTERS, monsters_);
+#if __cpp_lib_span >= 202002L
+    deserialize<std::vector<Monster>, std::vector<zc_Monster>>(
+        SampleType::ZC_MONSTERS, monsters_);
+#endif
   }
 
  private:
-  void serialize(SampleType sample_type, auto &sample) {
+  template <typename T>
+  void serialize(SampleType sample_type, T &sample) {
     {
       struct_pack::serialize_to(buffer_, sample);
       buffer_.clear();
@@ -110,22 +135,20 @@ struct struct_pack_sample : public base_sample {
           buffer_.clear();
           struct_pack::serialize_to(buffer_, sample);
           no_op(buffer_);
+          no_op((char *)&sample);
         }
       }
       ser_time_elapsed_map_.emplace(sample_type, ns);
     }
     buf_size_map_.emplace(sample_type, buffer_.size());
   }
-
-  void deserialize(SampleType sample_type, auto &sample) {
-    using T = std::remove_cvref_t<decltype(sample)>;
-
+  template <typename T, typename U = T>
+  void deserialize(SampleType sample_type, T &sample) {
     // get serialized buffer of sample for deserialize
     buffer_.clear();
     struct_pack::serialize_to(buffer_, sample);
 
-    std::vector<T> vec;
-    vec.resize(ITERATIONS);
+    U obj;
 
     uint64_t ns = 0;
     std::string bench_name =
@@ -134,13 +157,15 @@ struct struct_pack_sample : public base_sample {
     {
       ScopedTimer timer(bench_name.data(), ns);
       for (int i = 0; i < ITERATIONS; ++i) {
-        [[maybe_unused]] auto ec = struct_pack::deserialize_to(vec[i], buffer_);
+        [[maybe_unused]] auto ec = struct_pack::deserialize_to(obj, buffer_);
+        no_op((char *)&obj);
+        no_op(buffer_);
       }
-      no_op((char *)vec.data());
     }
     deser_time_elapsed_map_.emplace(sample_type, ns);
   }
 
+  std::vector<rect2<int32_t>> rect2s_;
   std::vector<rect<int32_t>> rects_;
   std::vector<person> persons_;
   std::vector<Monster> monsters_;

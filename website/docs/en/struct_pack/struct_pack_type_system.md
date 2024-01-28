@@ -201,47 +201,30 @@ concept unique_ptr = requires(Type ptr) {
 
 If the value of this object is a null pointer, struct_pack will compress it.
 
+### bitset
+
+The class needs to provide: `size()`,`flip()`,`set()`,`reset()`,`count()`,and the function `size()` is constexpr. The layout of this type must be trivial and store 8 bit into one byte.
+```cpp
+  template <typename Type>
+  concept bitset = requires (Type t){
+    t.flip();
+    t.set();
+    t.reset();
+    t.count();
+  } && (Type{}.size()+7)/8 == sizeof(Type);
+```
+
 ## Struct 
 
-`struct_pack` supports `struct`. Up to **64** fields are supported and nested fields are supported too. All members
-should be of valid `struct_pack` type. There are two kinds of `struct`:
+`struct_pack` supports `struct` type. Up to **64** fields are supported and nested fields are supported too. All members
+should be of valid `struct_pack` type. 
 
-### struct/class/std::pair/tuplet::tuple
-
-For example: 
-
-```cpp
-struct person {
-  int age;
-  std::string name;
-};
-```
-and
-```cpp
-std::pair<int,std::string>
-```
-and
-```cpp
-tuplet::tuple<int,std::string>
-```
-
-Those types are same type in struct_pack.
-
-### std::tuple
-
-For historical reasons, `std::tuple<T...>` have a different memory layout than ordinary structs, and for optimization reasons we distinguish them from ordinary structs in the type system. For example:
-
-For instance:
-
-```cpp
-std::tuple<int,std::string>
-```
-are different types with `person` in struct_pack.
+struct type could be `struct/class/std::tuple/tuplet::tuple/std::pair`
 
 
 ### trivial struct
 
-If there is a struct/class/std::pair/tuplet::tuple, and all the field of this type is a trivial type, then this type is a trivial struct in struct_pack.
+If there is a struct/class/std::pair/tuplet::tuple, and all the field of this type is a trivial type, and the type isn't registed by macro `STRUCT_PACK_REFL`, then this type is a trivial struct in struct_pack.
 
 A trivial type is :
 1. fundamental type.
@@ -274,6 +257,21 @@ void test() {
   assert(result.has_value() == false);
 }
 ```
+
+Remeber, the type registed by macro `STRUCT_PACK_REFL` is not trivial struct.  
+For example:
+```cpp
+struct foo {
+  int a,b,c;
+};
+struct bar {
+  int a,b,c;
+};
+STRUCT_PACK_REFL(bar,a,b,c);
+static_assert(struct_pack::get_type_code<foo>()!=struct_pack::get_type_code<bar>());
+```
+
+the `std::tuple` is not trivial struct too.
 
 ## Compatible Type
 

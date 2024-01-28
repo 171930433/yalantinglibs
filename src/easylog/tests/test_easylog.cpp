@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <ylt/util/time_util.h>
+
 #include <filesystem>
 #include <ylt/easylog.hpp>
 
@@ -33,12 +35,55 @@ std::string get_last_line(const std::string& filename) {
   return last_line;
 }
 
+TEST_CASE("test severity") {
+  CHECK(easylog::severity_str(easylog::Severity::WARN) ==
+        easylog::severity_str(easylog::Severity::WARNING));
+  CHECK(easylog::severity_str(easylog::Severity::CRITICAL) ==
+        easylog::severity_str(easylog::Severity::FATAL));
+}
+
 TEST_CASE("test basic") {
   std::string filename = "easylog.txt";
   std::filesystem::remove(filename);
   easylog::init_log(Severity::DEBUG, filename, false, true, 5000, 1, true);
 
+  std::chrono::seconds seconds(3);
+  std::chrono::system_clock::time_point p(seconds);
+  std::chrono::system_clock::now();
+
+  std::time_t now = std::time(0);
+  std::chrono::system_clock::time_point pt =
+      std::chrono::system_clock::from_time_t(now);
+  ELOG_INFO << pt;
+  ELOG_INFO << std::chrono::system_clock::now();
+
+  easylog::set_console(false);
+  ELOG_INFO << "no console";
+  easylog::set_console(true);
+
+  easylog::set_min_severity(Severity::WARN);
+  ELOG_INFO << "info log";
+  easylog::set_min_severity(Severity::DEBUG);
+
+  std::unique_ptr<int> ptr(new int(42));
+  ELOG_INFO << ptr.get();
   ELOG_INFO << 42 << " " << 4.5 << 'a' << Severity::DEBUG;
+  ELOG_INFO << false << ", " << true;
+  char buf[5] = {"test"};
+  std::string_view sv = "test";
+  std::string str = "test";
+  std::array<char, 5> arr{"test"};
+  std::stringstream ss;
+  ss << "test";
+  ELOG_INFO << arr << ", " << ss;
+
+  auto id = std::this_thread::get_id();
+  ELOG_INFO << buf << ", " << str << ", " << sv << ", " << id;
+
+#if __has_include(<fmt/format.h>) || (__has_include(<format>) && !defined(__APPLE__))
+  ELOGFMT(INFO, "{} {}", 20, 42);
+  ELOGFMT(INFO, "it is a long string test {} {}", 42, "fmt");
+#endif
 
   ELOGV(INFO, "test");
   ELOGV(INFO, "it is a long string test %d %s", 2, "ok");
@@ -48,6 +93,11 @@ TEST_CASE("test basic") {
   ELOGV(INFO, "rpc header data_len: %d, buf sz: %lu", len, 20);
   CHECK(get_last_line(filename).rfind("rpc header data_len: 42, buf sz: 20") !=
         std::string::npos);
+
+  ELOG(WARN) << "warn";
+  CHECK(get_last_line(filename).find("WARNING") != std::string::npos);
+  ELOG(WARNING) << "warning";
+  CHECK(get_last_line(filename).find("WARNING") != std::string::npos);
 
   ELOG(INFO) << "test log";
   easylog::flush();
@@ -80,6 +130,27 @@ TEST_CASE("test basic") {
   easylog::flush<InstanceId>();
   CHECK(get_last_line(other_filename).rfind("it is a test 42") !=
         std::string::npos);
+}
+
+TEST_CASE("test roll files and automatic create directories") {
+  std::string filename = "a/b/c/test.txt";
+  std::filesystem::remove(filename);
+  CHECK(!std::filesystem::exists(filename));
+  constexpr size_t InstanceId = 888;
+  easylog::init_log<InstanceId>(Severity::DEBUG, filename, false, true, 20, 3,
+                                true);
+  CHECK(std::filesystem::exists(filename));
+  MELOG_INFO(InstanceId) << 42 << " " << 4.5 << 'a' << " it is a test";
+  MELOG_INFO(InstanceId) << 42 << " " << 4.5 << 'a' << " it is a test";
+  MELOG_INFO(InstanceId) << 42 << " " << 4.5 << 'a' << " it is a test";
+
+  CHECK(std::filesystem::exists(filename));
+  CHECK(std::filesystem::exists("a/b/c/test.1.txt"));
+  CHECK(std::filesystem::exists("a/b/c/test.2.txt"));
+
+  std::error_code ec;
+  std::filesystem::remove_all("a", ec);
+  std::cout << ec.message() << "\n";
 }
 
 TEST_CASE("test_severity") {

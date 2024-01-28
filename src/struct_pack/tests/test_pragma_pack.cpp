@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 #include <cstddef>
-#include <iostream>
+#include <map>
 #include <type_traits>
 #include <ylt/struct_pack.hpp>
 
@@ -26,13 +26,8 @@ static std::string alignment_requirement_err_msg = "different alignment requirem
 // clang-format on
 TEST_SUITE_BEGIN("test_pragma_pack");
 namespace test_pragma_pack {
-template <typename T>
-concept Dummy = requires {
-  T().a;
-  T().b;
-};
 
-template <Dummy A, Dummy B>
+template <typename A, typename B>
 bool operator==(const A& a, const B& b) {
   return a.a == b.a && a.b == b.b;
 }
@@ -71,14 +66,14 @@ TEST_CASE("testing no #pragam pack") {
   static_assert(sizeof(T) == 4);
   static_assert(offsetof(T, a) == 0);
   static_assert(offsetof(T, b) == 2);
-  T t{.a = 'a', .b = 666};
+  T t{'a', 666};
   auto literal = struct_pack::get_type_literal<test_pragma_pack::dummy>();
   string_literal<char, 6> val{
       {(char)-3, 12, 7, (char)131, (char)131, (char)-1}};
   REQUIRE(literal == val);
   auto buf = struct_pack::serialize(t);
   auto ret = struct_pack::deserialize<T>(buf);
-  REQUIRE_MESSAGE(ret, struct_pack::error_message(ret.error()));
+  REQUIRE_MESSAGE(ret, ret.error().message());
   T d_t = ret.value();
   CHECK(t == d_t);
 }
@@ -104,7 +99,7 @@ TEST_CASE("testing #pragma pack(1)") {
   static_assert(sizeof(T) == 3);
   static_assert(offsetof(T, a) == 0);
   static_assert(offsetof(T, b) == 1);
-  T t{.a = 'a', .b = 666};
+  T t{'a', 666};
   auto literal = struct_pack::get_type_literal<T>();
   string_literal<char, 6> val{
       {(char)-3, 12, 7, (char)130, (char)130, (char)-1}};
@@ -118,7 +113,7 @@ TEST_CASE("testing #pragma pack(1)") {
   SUBCASE("deserialize to dummy_1") {
     using DT = test_pragma_pack::dummy_1;
     auto ret = struct_pack::deserialize<DT>(buf);
-    REQUIRE_MESSAGE(ret, struct_pack::error_message(ret.error()));
+    REQUIRE_MESSAGE(ret, ret.error().message());
     DT d_t = ret.value();
     CHECK(t == d_t);
   }
@@ -145,7 +140,7 @@ TEST_CASE("testing #pragma pack(2)") {
   static_assert(sizeof(T) == 4);
   static_assert(offsetof(T, a) == 0);
   static_assert(offsetof(T, b) == 2);
-  T t{.a = 'a', .b = 666};
+  T t{'a', 666};
   auto literal = struct_pack::get_type_literal<T>();
   string_literal<char, 6> val{
       {(char)-3, 12, 7, (char)131, (char)131, (char)-1}};
@@ -154,7 +149,7 @@ TEST_CASE("testing #pragma pack(2)") {
   SUBCASE("deserialize to dummy") {
     using DT = test_pragma_pack::dummy;
     auto ret = struct_pack::deserialize<DT>(buf);
-    REQUIRE_MESSAGE(ret, struct_pack::error_message(ret.error()));
+    REQUIRE_MESSAGE(ret, ret.error().message());
   }
   SUBCASE("deserialize to dummy_1") {
     using DT = test_pragma_pack::dummy_1;
@@ -164,7 +159,7 @@ TEST_CASE("testing #pragma pack(2)") {
   SUBCASE("deserialize to dummy_2") {
     using DT = test_pragma_pack::dummy_2;
     auto ret = struct_pack::deserialize<DT>(buf);
-    REQUIRE_MESSAGE(ret, struct_pack::error_message(ret.error()));
+    REQUIRE_MESSAGE(ret, ret.error().message());
     DT d_t = ret.value();
     CHECK(t == d_t);
   }

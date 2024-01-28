@@ -22,11 +22,16 @@
 #include <shared_mutex>
 #include <string>
 #include <string_view>
+#include <system_error>
 
 #include "record.hpp"
 #include "ylt/util/concurrentqueue.h"
 
 namespace easylog {
+struct empty_mutex {
+  void lock() {}
+  void unlock() {}
+};
 constexpr inline std::string_view BOM_STR = "\xEF\xBB\xBF";
 
 constexpr char digits[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
@@ -114,7 +119,13 @@ class appender {
         if (stop_) {
           if (queue_.size_approx() > 0) {
             while (queue_.try_dequeue(record)) {
-              write_record(record);
+              if (max_files_ > 0 && file_size_ > max_file_size_ &&
+                  static_cast<size_t>(-1) != file_size_) {
+                roll_log_files();
+              }
+
+              enable_console_ ? write_record<false, true>(record)
+                              : write_record<false, false>(record);
             }
           }
         }
@@ -140,14 +151,22 @@ class appender {
     return {buf, last_len};
   }
 
+  template <bool sync>
+  auto &get_mutex() {
+    if constexpr (sync) {
+      return mtx_;
+    }
+    else {
+      return empty_mtx_;
+    }
+  }
+
   template <bool sync = false, bool enable_console = false>
   void write_record(record_t &record) {
+    std::lock_guard guard(get_mutex<sync>());
     if constexpr (sync == true) {
-      std::shared_lock guard(mtx_);
       if (max_files_ > 0 && file_size_ > max_file_size_ &&
           static_cast<size_t>(-1) != file_size_) {
-        guard.unlock();
-        std::lock_guard lock{mtx_};
         roll_log_files();
       }
     }
@@ -158,34 +177,24 @@ class appender {
     memcpy(buf + 24, severity_str(record.get_severity()).data(), 8);
     buf[32] = ' ';
 
-    if constexpr (enable_console) {
-      if constexpr (sync) {
-        std::lock_guard guard(console_mtx_);
-        add_color(record.get_severity());
-      }
-      else {
-        add_color(record.get_severity());
-      }
-    }
+    auto time_str = std::string_view(buf, 33);
+    auto tid_str = get_tid_buf(record.get_tid());
+    auto file_str = record.get_file_str();
+    auto msg = record.get_message();
 
-    write_str<sync, enable_console>(std::string_view(buf, 33));
+    write_file(time_str);
+    write_file(tid_str);
+    write_file(file_str);
+    write_file(msg);
 
     if constexpr (enable_console) {
+      add_color(record.get_severity());
+      std::cout << time_str;
       clean_color(record.get_severity());
-    }
-
-    write_str<sync, enable_console>(get_tid_buf(record.get_tid()));
-    write_str<sync, enable_console>(record.get_file_str());
-    write_str<sync, enable_console>(record.get_message());
-
-    if constexpr (enable_console) {
-      if constexpr (sync) {
-        std::lock_guard guard(console_mtx_);
-        std::cout << std::flush;
-      }
-      else {
-        std::cout << std::flush;
-      }
+      std::cout << tid_str;
+      std::cout << file_str;
+      std::cout << msg;
+      std::cout << std::flush;
     }
   }
 
@@ -237,6 +246,7 @@ class appender {
       windows_set_color(color_type::black, color_type::red);
     if (severity == Severity::CRITICAL)
       windows_set_color(color_type::white_bright, color_type::red);
+#elif __APPLE__
 #else
     if (severity == Severity::WARN)
       std::cout << "\x1B[93m";
@@ -251,6 +261,7 @@ class appender {
 #if defined(_WIN32)
     if (severity >= Severity::WARN)
       windows_set_color(color_type::white, color_type::black);
+#elif __APPLE__
 #else
     if (severity >= Severity::WARN)
       std::cout << "\x1B[0m\x1B[0K";
@@ -259,7 +270,7 @@ class appender {
 
   void write(record_t &&r) {
     queue_.enqueue(std::move(r));
-    cnd_.notify_all();
+    cnd_.notify_one();
   }
 
   void flush() {
@@ -291,7 +302,19 @@ class appender {
 
  private:
   void open_log_file() {
+    file_size_ = 0;
     std::string filename = build_filename();
+
+    if (std::filesystem::path(filename).has_parent_path()) {
+      std::error_code ec;
+      auto parant_path = std::filesystem::path(filename).parent_path();
+      std::filesystem::create_directories(parant_path, ec);
+      if (ec) {
+        std::cout << "create directories error: " << ec.message() << std::flush;
+        abort();
+      }
+    }
+
     file_.open(filename, std::ios::binary | std::ios::out | std::ios::app);
     if (file_) {
       std::error_code ec;
@@ -304,7 +327,6 @@ class appender {
       if (file_size == 0) {
         if (file_.write(BOM_STR.data(), BOM_STR.size())) {
           file_size_ += BOM_STR.size();
-          is_first_write_ = false;
         }
       }
     }
@@ -328,6 +350,10 @@ class appender {
       filename.append(file_path.extension().string());
     }
 
+    if (std::filesystem::path(file_path).has_parent_path()) {
+      return file_path.parent_path().append(filename).string();
+    }
+
     return filename;
   }
 
@@ -346,11 +372,9 @@ class appender {
     }
 
     open_log_file();
-    is_first_write_ = false;
   }
 
-  template <bool sync, bool enable_console>
-  void write_str(std::string_view str) {
+  void write_file(std::string_view str) {
     if (has_init_) {
       if (file_.write(str.data(), str.size())) {
         if (flush_every_time_) {
@@ -358,16 +382,6 @@ class appender {
         }
 
         file_size_ += str.size();
-      }
-    }
-
-    if constexpr (enable_console) {
-      if constexpr (sync) {
-        std::lock_guard guard(console_mtx_);
-        std::cout << str;
-      }
-      else {
-        std::cout << str;
       }
     }
   }
@@ -380,11 +394,9 @@ class appender {
   size_t file_size_ = 0;
   size_t max_file_size_ = 0;
   size_t max_files_ = 0;
-  bool is_first_write_ = true;
-
-  std::mutex console_mtx_;
 
   std::shared_mutex mtx_;
+  empty_mutex empty_mtx_;
   std::ofstream file_;
 
   std::mutex que_mtx_;

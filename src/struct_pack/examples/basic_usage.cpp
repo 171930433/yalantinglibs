@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <fcntl.h>
 
 #include <cassert>
 #include <cstdint>
@@ -63,7 +62,7 @@ struct person {
 void basic_usage() {
   person p{20, "tom"};
 
-  person p2{.age = 21, .name = "Betty"};
+  person p2{/*.age =*/21, /*.name =*/"Betty"};
 
   // serialize api
   // api 1. serialize with default container
@@ -84,11 +83,14 @@ void basic_usage() {
   // api 5. serialize with offset
   {
     auto buffer = struct_pack::serialize_with_offset(/* offset = */ 2, p);
-    assert(buffer[0] == '\0' && buffer[1] == '\0');
+    auto buffer2 = struct_pack::serialize(p);
+    bool result = std::string_view{buffer.data() + 2, buffer.size() - 2} ==
+                  std::string_view{buffer2.data(), buffer2.size()};
+    assert(result);
   }
   // api 6. serialize varadic param
   {
-    person p2{.age = 21, .name = "Betty"};
+    person p2{/*.age =*/21, /*.name =*/"Betty"};
     auto buffer = struct_pack::serialize(p.age, p2.name);
   }
   // api 7. serialize to stream
@@ -111,7 +113,7 @@ void basic_usage() {
   {
     person p2;
     [[maybe_unused]] auto ec = struct_pack::deserialize_to(p2, buffer);
-    assert(ec == struct_pack::errc{});
+    assert(!ec);
     assert(p == p2);
   }
   // api 3. partial deserialize
@@ -135,7 +137,7 @@ void basic_usage() {
     auto buffer = struct_pack::serialize(p.age, p2.name);
     [[maybe_unused]] auto result =
         struct_pack::deserialize_to(p3.age, buffer, p3.name);
-    assert(result == struct_pack::errc{});
+    assert(!result);
     assert(p3.age == p.age);
     assert(p3.name == p2.name);
   }
@@ -148,5 +150,3 @@ void basic_usage() {
     assert(p4 == p);
   }
 }
-
-int main() { basic_usage(); }

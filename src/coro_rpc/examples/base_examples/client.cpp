@@ -16,6 +16,8 @@
 #include <ylt/coro_rpc/coro_rpc_client.hpp>
 
 #include "rpc_service.h"
+#include "ylt/coro_rpc/impl/errno.h"
+#include "ylt/coro_rpc/impl/protocol/coro_rpc_protocol.hpp"
 using namespace coro_rpc;
 using namespace async_simple::coro;
 using namespace std::string_literals;
@@ -28,54 +30,57 @@ Lazy<void> show_rpc_call() {
   coro_rpc_client client;
 
   [[maybe_unused]] auto ec = co_await client.connect("127.0.0.1", "8801");
-  assert(ec == std::errc{});
+  assert(!ec);
+
   auto ret = co_await client.call<hello_world>();
-  if (!ret) {
-    std::cout << "err: " << ret.error().msg << std::endl;
-  }
   assert(ret.value() == "hello_world"s);
 
+  client.set_req_attachment("This is attachment.");
+  auto ret_void = co_await client.call<echo_with_attachment>();
+  assert(client.get_resp_attachment() == "This is attachment.");
+
+  client.set_req_attachment("This is attachment2.");
+  ret_void = co_await client.call<echo_with_attachment2>();
+  assert(client.get_resp_attachment() == "This is attachment2.");
+
   auto ret_int = co_await client.call<A_add_B>(12, 30);
-  if (!ret_int) {
-    std::cout << "err: " << ret_int.error().msg << std::endl;
-  }
   assert(ret_int.value() == 42);
 
   ret = co_await client.call<coro_echo>("coro_echo");
-  if (!ret) {
-    std::cout << "err: " << ret.error().msg << std::endl;
-  }
   assert(ret.value() == "coro_echo"s);
 
   ret = co_await client.call<hello_with_delay>("hello_with_delay"s);
-  if (!ret) {
-    std::cout << "err: " << ret.error().msg << std::endl;
-  }
   assert(ret.value() == "hello_with_delay"s);
 
-  ret = co_await client.call<nested_echo>("hello_with_delay"s);
-  if (!ret) {
-    std::cout << "err: " << ret.error().msg << std::endl;
-  }
-  assert(ret.value() == "hello_with_delay"s);
+  ret = co_await client.call<nested_echo>("nested_echo"s);
+  assert(ret.value() == "nested_echo"s);
 
   ret = co_await client.call<&HelloService::hello>();
-  if (!ret) {
-    std::cout << "err: " << ret.error().msg << std::endl;
-  }
   assert(ret.value() == "HelloService::hello"s);
 
   ret = co_await client.call<&HelloService::hello_with_delay>(
       "HelloService::hello_with_delay"s);
-  if (!ret) {
-    std::cout << "err: " << ret.error().msg << std::endl;
-  }
   assert(ret.value() == "HelloService::hello_with_delay"s);
+
+  ret = co_await client.call<return_error>();
+
+  assert(ret.error().code == 404);
+  assert(ret.error().msg == "404 Not Found.");
+
+  ret = co_await client.call<rpc_with_state_by_tag>();
+  assert(ret.value() == "1");
+  ret = co_await client.call<rpc_with_state_by_tag>();
+  assert(ret.value() == "2");
+  ret = co_await client.call<rpc_with_state_by_tag>();
+  assert(ret.value() == "3");
 }
 
 int main() {
-  syncAwait(show_rpc_call());
-
-  std::cout << "Done!" << std::endl;
+  try {
+    syncAwait(show_rpc_call());
+    std::cout << "Done!" << std::endl;
+  } catch (const std::exception& e) {
+    std::cout << "Error:" << e.what() << std::endl;
+  }
   return 0;
 }

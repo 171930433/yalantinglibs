@@ -20,12 +20,17 @@ using namespace coro_rpc;
 using namespace async_simple;
 using namespace async_simple::coro;
 int main() {
-  // start rpc server
-  coro_rpc_server server(std::thread::hardware_concurrency(), 8801);
+  // init rpc server
+  coro_rpc_server server(/*thread=*/std::thread::hardware_concurrency(),
+                         /*port=*/8801);
+
+  coro_rpc_server server2{/*thread=*/1, /*port=*/8802};
 
   // regist normal function for rpc
   server.register_handler<hello_world, A_add_B, hello_with_delay, echo,
-                          coro_echo>();
+                          nested_echo, coro_echo, echo_with_attachment,
+                          echo_with_attachment2, return_error,
+                          rpc_with_state_by_tag>();
 
   // regist member function for rpc
   HelloService hello_service;
@@ -33,6 +38,11 @@ int main() {
       .register_handler<&HelloService::hello, &HelloService::hello_with_delay>(
           &hello_service);
 
-  // start server
-  return server.start() == std::errc{};
+  server2.register_handler<echo>();
+  // async start server
+  auto res = server2.async_start();
+  assert(res.has_value());
+
+  // sync start server & sync await server stop
+  return !server.start();
 }

@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <fstream>
 #include <ios>
 #include <iostream>
@@ -7,25 +8,25 @@
 #include "test_struct.hpp"
 
 TEST_CASE("test serialize_to/deserialize file") {
-  person p1{.age = 24, .name = "Betty"}, p2{.age = 45, .name = "Tom"};
+  person p1{24, "Betty"}, p2{45, "Tom"};
   complicated_object v{
-      .color = Color::red,
-      .a = 42,
-      .b = "hello",
-      .c = {{20, "tom"}, {22, "jerry"}},
-      .d = {"hello", "world"},
-      .e = {1, 2},
-      .f = {{1, {20, "tom"}}},
-      .g = {{1, {20, "tom"}}, {1, {22, "jerry"}}},
-      .h = {"aa", "bb"},
-      .i = {1, 2},
-      .j = {{1, {20, "tom"}}, {1, {22, "jerry"}}},
-      .k = {{1, 2}, {1, 3}},
-      .m = {person{20, "tom"}, {22, "jerry"}},
-      .n = {person{20, "tom"}, {22, "jerry"}},
-      .o = std::make_pair("aa", person{20, "tom"}),
+      Color::red,
+      42,
+      "hello",
+      {{20, "tom"}, {22, "jerry"}},
+      {"hello", "world"},
+      {1, 2},
+      {{1, {20, "tom"}}},
+      {{1, {20, "tom"}}, {1, {22, "jerry"}}},
+      {"aa", "bb"},
+      {1, 2},
+      {{1, {20, "tom"}}, {1, {22, "jerry"}}},
+      {{1, 2}, {1, 3}},
+      {person{20, "tom"}, {22, "jerry"}},
+      {person{20, "tom"}, {22, "jerry"}},
+      std::make_pair("aa", person{20, "tom"}),
   };
-  nested_object nested{.id = 2, .name = "tom", .p = {20, "tom"}, .o = v};
+  nested_object nested{2, "tom", {20, "tom"}, v};
   SUBCASE("serialize_to empty file") {
     // serialize to file
     std::ofstream ofs("1.save", std::ofstream::binary | std::ofstream::out);
@@ -67,29 +68,28 @@ TEST_CASE("test serialize_to/deserialize file") {
     for (int i = 0; i < 100; ++i) {
       person person1;
       auto ec = struct_pack::deserialize_to(person1, ifs);
-      CHECK(ec == struct_pack::errc{});
+      CHECK(!ec);
       CHECK(person1 == p1);
       nested_object nested1;
       ec = struct_pack::deserialize_to(nested1, ifs);
-      CHECK(ec == struct_pack::errc{});
+      CHECK(!ec);
       CHECK(nested1 == nested);
     }
     for (int i = 0; i < 100; ++i) {
       person person2;
       auto ec = struct_pack::deserialize_to(person2, ifs);
-      CHECK(ec == struct_pack::errc{});
+      CHECK(!ec);
       CHECK(person2 == p2);
       nested_object nested1;
       ec = struct_pack::deserialize_to(nested1, ifs);
-      CHECK(ec == struct_pack::errc{});
+      CHECK(!ec);
       CHECK(nested1 == nested);
     }
   }
 }
 
 TEST_CASE("test get_field file") {
-  std::array<person, 2> p{person{.age = 24, .name = "Betty"},
-                          person{.age = 45, .name = "Tom"}};
+  std::array<person, 2> p{person{24, "Betty"}, person{45, "Tom"}};
   std::ofstream ofs("2.save", std::ofstream::binary | std::ofstream::out);
   for (int i = 0; i < 100; ++i) {
     for (auto &p1 : p) {
@@ -130,7 +130,7 @@ TEST_CASE("test get_field file") {
         CHECK(ifs.read((char *)&sz, 4));
         std::string name;
         auto ec = struct_pack::get_field_to<person, 1>(name, ifs);
-        CHECK(ec == struct_pack::errc{});
+        CHECK(!ec);
         CHECK(name == p1.name);
         CHECK(ifs.seekg(pos + sz));
       }
@@ -139,10 +139,10 @@ TEST_CASE("test get_field file") {
 }
 
 TEST_CASE("test compatible obj") {
-  person p{.age = 24, .name = "Betty"};
-  person1 p1{.age = 24, .name = "Betty"};
-  person1 p2{.age = 24, .name = "Betty", .id = 114514};
-  person1 p3{.age = 24, .name = "Betty", .id = 114514, .maybe = true};
+  person p{24, "Betty"};
+  person1 p1{24, "Betty"};
+  person1 p2{24, "Betty", 114514};
+  person1 p3{24, "Betty", 114514, true};
   SUBCASE("forward") {
     {
       std::ofstream ofs("3.save", std::ofstream::binary | std::ofstream::out);
@@ -201,4 +201,62 @@ TEST_CASE("test compatible obj") {
       CHECK(*res == std::nullopt);
     }
   }
+}
+
+TEST_CASE("testing file size no enough") {
+  std::vector<std::string> data = {"Hello", "Hi", "Hey", "Hoo"};
+  {
+    std::ofstream of("tmp.data", std::ofstream::binary | std::ofstream::out);
+    auto buffer = struct_pack::serialize(data);
+    for (int i = 0; i < 5; ++i) buffer.pop_back();
+    of.write(buffer.data(), buffer.size());
+  }
+  {
+    std::ifstream ifi("tmp.data", std::ios::in | std::ios::binary);
+    std::vector<std::string> data2;
+    std::vector<std::string> data3 = {"Hello", "Hi", ""};
+    auto ec = struct_pack::deserialize_to(data2, ifi);
+    CHECK(ec == struct_pack::errc::no_buffer_space);
+    CHECK(data3 == data2);
+    CHECK(data2.capacity() == 3);
+  }
+  std::filesystem::remove("tmp.data");
+}
+
+TEST_CASE("testing broken container size") {
+  SUBCASE("hacker 1") {
+    std::string data(2 * 1024 * 1024, 'A');
+    {
+      std::ofstream of("tmp.data", std::ofstream::binary | std::ofstream::out);
+      auto buffer = struct_pack::serialize<std::string>(data);
+      buffer = buffer.substr(0, 16);
+      of.write(buffer.data(), buffer.size());
+    }
+    {
+      std::ifstream ifi("tmp.data", std::ios::in | std::ios::binary);
+      std::string data2;
+      auto ec = struct_pack::deserialize_to(data2, ifi);
+      CHECK(ec == struct_pack::errc::no_buffer_space);
+      CHECK(data2.size() == 0);
+      CHECK(data2.capacity() < 100);  // SSO
+    }
+  }
+  SUBCASE("hacker 2") {
+    std::string data(2 * 1024 * 1024, 'A');
+    {
+      std::ofstream of("tmp.data", std::ofstream::binary | std::ofstream::out);
+      auto buffer = struct_pack::serialize<std::string>(data);
+      buffer = buffer.substr(0, 2 * 1024 * 1024 - 10000);
+      of.write(buffer.data(), buffer.size());
+    }
+    {
+      std::ifstream ifi("tmp.data", std::ios::in | std::ios::binary);
+      std::string data2;
+      auto ec = struct_pack::deserialize_to(data2, ifi);
+      CHECK(ec == struct_pack::errc::no_buffer_space);
+      CHECK(data2.size() == 1 * 1024 * 1024);
+      CHECK(data2.capacity() < 2 * 1024 * 1024);
+    }
+  }
+  std::filesystem::remove("tmp.data");
 }

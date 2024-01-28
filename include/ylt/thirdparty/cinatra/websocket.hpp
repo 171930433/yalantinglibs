@@ -3,6 +3,11 @@
 #include "ws_define.h"
 
 namespace cinatra {
+enum ws_header_status {
+  error = -1,
+  complete = 0,
+  incomplete = -2,
+};
 class websocket {
  public:
   void sec_ws_key(std::string_view sec_key) { sec_ws_key_ = sec_key; }
@@ -40,7 +45,8 @@ class websocket {
   Payload length:  7 bits, 7+16 bits, or 7+64 bits
   Masking-key:  0 or 4 bytes
   */
-  int parse_header(const char *buf, size_t size, bool is_server = true) {
+  ws_header_status parse_header(const char *buf, size_t size,
+                                bool is_server = true) {
     const unsigned char *inp = (const unsigned char *)(buf);
 
     msg_opcode_ = inp[0] & 0x0F;
@@ -52,10 +58,12 @@ class websocket {
 
     left_header_len_ = 0;
     if (length_field <= 125) {
+      len_bytes_ = SHORT_HEADER;
       payload_length_ = length_field;
     }
     else if (length_field == 126)  // msglen is 16bit!
     {
+      len_bytes_ = MEDIUM_HEADER;
       payload_length_ = ntohs(*(uint16_t *)&inp[2]);  // (inp[2] << 8) + inp[3];
       pos += 2;
       left_header_len_ =
@@ -63,39 +71,33 @@ class websocket {
     }
     else if (length_field == 127)  // msglen is 64bit!
     {
+      len_bytes_ = LONG_HEADER;
       payload_length_ = (size_t)be64toh(*(uint64_t *)&inp[2]);
       pos += 8;
       left_header_len_ =
           is_server ? LONG_HEADER - size : CLIENT_LONG_HEADER - size;
     }
     else {
-      return -1;
+      len_bytes_ = INVALID_HEADER;
+      return ws_header_status::error;
     }
 
     if (msg_masked) {
       std::memcpy(mask_, inp + pos, 4);
     }
 
-    return left_header_len_ == 0 ? 0 : -2;
+    return left_header_len_ == 0 ? ws_header_status::complete
+                                 : ws_header_status::incomplete;
   }
 
-  ws_frame_type parse_payload(const char *buf, size_t size,
-                              std::string &outbuf) {
-    const unsigned char *inp = (const unsigned char *)(buf);
-    if (payload_length_ > size)
-      return ws_frame_type::WS_INCOMPLETE_FRAME;
+  int len_bytes() const { return len_bytes_; }
+  void reset_len_bytes() { len_bytes_ = SHORT_HEADER; }
 
-    if (payload_length_ > outbuf.size()) {
-      outbuf.resize((size_t)payload_length_);
-    }
-
-    if (*(uint32_t *)mask_ == 0) {
-      memcpy(&outbuf[0], (void *)(inp), payload_length_);
-    }
-    else {
-      // unmask data:
+  ws_frame_type parse_payload(std::span<char> buf) {
+    // unmask data:
+    if (*(uint32_t *)mask_ != 0) {
       for (size_t i = 0; i < payload_length_; i++) {
-        outbuf[i] = inp[i] ^ mask_[i % 4];
+        buf[i] = buf[i] ^ mask_[i % 4];
       }
     }
 
@@ -103,7 +105,7 @@ class websocket {
       return (msg_fin_)
                  ? ws_frame_type::WS_TEXT_FRAME
                  : ws_frame_type::WS_INCOMPLETE_TEXT_FRAME;  // continuation
-                                                             // frame ?
+    // frame ?
     if (msg_opcode_ == 0x1)
       return (msg_fin_) ? ws_frame_type::WS_TEXT_FRAME
                         : ws_frame_type::WS_INCOMPLETE_TEXT_FRAME;
@@ -124,19 +126,12 @@ class websocket {
     return {msg_header_, header_length};
   }
 
-  std::vector<asio::const_buffer> format_message(const char *src, size_t length,
-                                                 opcode code) {
-    size_t header_length = encode_header(length, code);
-    return {asio::buffer(msg_header_, header_length),
-            asio::buffer(src, length)};
-  }
-
-  inline std::string encode_frame(std::string &data, opcode op,
-                                  bool need_mask) {
+  std::string encode_frame(std::span<char> &data, opcode op, bool need_mask,
+                           bool eof = true) {
     std::string header;
     /// Base header.
     frame_header hdr{};
-    hdr.fin = 1;
+    hdr.fin = eof;
     hdr.rsv1 = 0;
     hdr.rsv2 = 0;
     hdr.rsv3 = 0;
@@ -212,6 +207,9 @@ class websocket {
 
   std::string format_close_payload(uint16_t code, char *message,
                                    size_t length) {
+    if (length == 0) {
+      return "";
+    }
     std::string close_payload;
     if (code) {
       close_payload.resize(length + 2);
@@ -259,7 +257,6 @@ class websocket {
   std::string_view sec_ws_key_;
 
   size_t payload_length_ = 0;
-  size_t left_payload_length_ = 0;
 
   size_t left_header_len_ = 0;
   uint8_t mask_[4] = {};
@@ -267,6 +264,7 @@ class websocket {
   unsigned char msg_fin_ = 0;
 
   char msg_header_[10];
+  ws_head_len len_bytes_ = SHORT_HEADER;
 };
 
 }  // namespace cinatra

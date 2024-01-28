@@ -27,9 +27,9 @@ inline auto create_rects(size_t object_count) {
   for (int i = 0; i < object_count; i++) {
     mygame::rect32 *rc = rcs.add_rect32_list();
     rc->set_x(1);
-    rc->set_y(11);
-    rc->set_width(1111);
-    rc->set_height(111111);
+    rc->set_y(0);
+    rc->set_width(11);
+    rc->set_height(1);
   }
   return rcs;
 }
@@ -39,7 +39,7 @@ inline mygame::persons create_persons(size_t object_count) {
   for (int i = 0; i < object_count; i++) {
     auto *p = ps.add_person_list();
     p->set_id(432798);
-    p->set_name("tom");
+    p->set_name(std::string(1024, 'A'));
     p->set_age(24);
     p->set_salary(65536.42);
   }
@@ -181,7 +181,8 @@ struct protobuf_sample_t : public base_sample {
   }
 
  private:
-  void serialize(SampleType sample_type, auto &sample) {
+  template <typename T>
+  void serialize(SampleType sample_type, T &sample) {
     {
       sample.SerializeToString(&buffer_);
       buffer_.clear();
@@ -196,6 +197,7 @@ struct protobuf_sample_t : public base_sample {
           buffer_.clear();
           sample.SerializeToString(&buffer_);
           no_op(buffer_);
+          no_op((char *)&sample);
         }
       }
       ser_time_elapsed_map_.emplace(sample_type, ns);
@@ -203,15 +205,13 @@ struct protobuf_sample_t : public base_sample {
     buf_size_map_.emplace(sample_type, buffer_.size());
   }
 
-  void deserialize(SampleType sample_type, auto &sample) {
-    using T = std::remove_cvref_t<decltype(sample)>;
-
+  template <typename T>
+  void deserialize(SampleType sample_type, T &sample) {
     // get serialized buffer of sample for deserialize
     buffer_.clear();
     sample.SerializeToString(&buffer_);
 
-    std::vector<T> vec;
-    vec.resize(ITERATIONS);
+    T obj;
 
     uint64_t ns = 0;
     std::string bench_name =
@@ -220,9 +220,10 @@ struct protobuf_sample_t : public base_sample {
     {
       ScopedTimer timer(bench_name.data(), ns);
       for (int i = 0; i < ITERATIONS; ++i) {
-        vec[i].ParseFromString(buffer_);
+        obj.ParseFromString(buffer_);
+        no_op((char *)&obj);
+        no_op(buffer_);
       }
-      no_op((char *)vec.data());
     }
     deser_time_elapsed_map_.emplace(sample_type, ns);
   }

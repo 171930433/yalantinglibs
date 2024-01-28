@@ -551,30 +551,76 @@ namespace iguana::detail {
 #define MAKE_STR_LIST(...) \
   MACRO_CONCAT(CON_STR, GET_ARG_COUNT(__VA_ARGS__))(__VA_ARGS__)
 
-#define MAKE_META_DATA_IMPL(STRUCT_NAME, ...)                               \
-  inline auto iguana_reflect_members(STRUCT_NAME const &) {                 \
-    struct reflect_members {                                                \
-      constexpr decltype(auto) static apply_impl() {                        \
-        return std::make_tuple(__VA_ARGS__);                                \
-      }                                                                     \
-      using size_type =                                                     \
-          std::integral_constant<size_t, GET_ARG_COUNT(__VA_ARGS__)>;       \
-      constexpr static std::string_view name() {                            \
-        return std::string_view(#STRUCT_NAME, sizeof(#STRUCT_NAME) - 1);    \
-      }                                                                     \
-      constexpr static size_t value() { return size_type::value; }          \
-      constexpr static std::array<frozen::string, size_type::value> arr() { \
-        return arr_##STRUCT_NAME;                                           \
-      }                                                                     \
-    };                                                                      \
-    return reflect_members{};                                               \
+#define MAKE_META_DATA_IMPL(STRUCT_NAME, ...)                                 \
+  [[maybe_unused]] inline static auto iguana_reflect_members(                 \
+      STRUCT_NAME const &) {                                                  \
+    struct reflect_members {                                                  \
+      constexpr decltype(auto) static apply_impl() {                          \
+        return std::make_tuple(__VA_ARGS__);                                  \
+      }                                                                       \
+      using size_type =                                                       \
+          std::integral_constant<size_t, GET_ARG_COUNT(__VA_ARGS__)>;         \
+      constexpr static std::string_view name() { return name_##STRUCT_NAME; } \
+      constexpr static std::string_view struct_name() {                       \
+        return std::string_view(#STRUCT_NAME, sizeof(#STRUCT_NAME) - 1);      \
+      }                                                                       \
+      constexpr static std::string_view fields() {                            \
+        return fields_##STRUCT_NAME;                                          \
+      }                                                                       \
+      constexpr static size_t value() { return size_type::value; }            \
+      constexpr static std::array<frozen::string, size_type::value> arr() {   \
+        return arr_##STRUCT_NAME;                                             \
+      }                                                                       \
+    };                                                                        \
+    return reflect_members{};                                                 \
   }
 
-#define MAKE_META_DATA(STRUCT_NAME, N, ...)                            \
-  constexpr inline std::array<frozen::string, N> arr_##STRUCT_NAME = { \
-      MARCO_EXPAND(MACRO_CONCAT(CON_STR, N)(__VA_ARGS__))};            \
-  MAKE_META_DATA_IMPL(STRUCT_NAME,                                     \
+#define MAKE_META_DATA(STRUCT_NAME, TABLE_NAME, N, ...)                       \
+  static constexpr inline std::array<frozen::string, N> arr_##STRUCT_NAME = { \
+      MARCO_EXPAND(MACRO_CONCAT(CON_STR, N)(__VA_ARGS__))};                   \
+  static constexpr inline std::string_view fields_##STRUCT_NAME = {           \
+      MAKE_NAMES(__VA_ARGS__)};                                               \
+  static constexpr inline std::string_view name_##STRUCT_NAME = TABLE_NAME;   \
+  MAKE_META_DATA_IMPL(STRUCT_NAME,                                            \
                       MAKE_ARG_LIST(N, &STRUCT_NAME::FIELD, __VA_ARGS__))
+
+#define REFLECTION_ALIAS_IMPL(STRUCT_NAME, ALIAS, N, ...) \
+  MAKE_META_DATA_IMPL_ALIAS(STRUCT_NAME, ALIAS, __VA_ARGS__)
+
+#define FLDALIAS(a, b) \
+  std::pair { a, b }
+
+template <typename... Args>
+constexpr auto get_mem_ptr_tp(Args... pair) {
+  return std::make_tuple(std::get<0>(pair)...);
+}
+
+template <size_t N, typename... Args>
+constexpr std::array<frozen::string, N> get_alias_arr(Args... pairs) {
+  return std::array<frozen::string, sizeof...(Args)>{
+      frozen::string(std::get<1>(pairs))...};
+}
+
+#define MAKE_META_DATA_IMPL_ALIAS(STRUCT_NAME, ALIAS, ...)                    \
+  [[maybe_unused]] inline static auto iguana_reflect_members(                 \
+      STRUCT_NAME const &) {                                                  \
+    struct reflect_members {                                                  \
+      constexpr decltype(auto) static apply_impl() {                          \
+        return iguana::detail::get_mem_ptr_tp(__VA_ARGS__);                   \
+      }                                                                       \
+      using size_type = std::integral_constant<                               \
+          size_t, std::tuple_size_v<decltype(std::make_tuple(__VA_ARGS__))>>; \
+      constexpr static std::string_view name() { return ALIAS; }              \
+      constexpr static std::string_view struct_name() {                       \
+        return std::string_view(#STRUCT_NAME, sizeof(#STRUCT_NAME) - 1);      \
+      }                                                                       \
+      constexpr static size_t value() { return size_type::value; }            \
+      constexpr static std::array<frozen::string, size_type::value> arr() {   \
+        return iguana::detail::get_alias_arr<size_type::value>(__VA_ARGS__);  \
+      }                                                                       \
+    };                                                                        \
+    return reflect_members{};                                                 \
+  }
 
 #define MAKE_META_DATA_IMPL_EMPTY(STRUCT_NAME)                              \
   inline auto iguana_reflect_members(STRUCT_NAME const &) {                 \
@@ -623,13 +669,20 @@ inline constexpr auto get_iguana_struct_map_impl(
 }  // namespace iguana::detail
 
 namespace iguana {
+#define REFLECTION_WITH_NAME(STRUCT_NAME, TABLE_NAME, ...)            \
+  MAKE_META_DATA(STRUCT_NAME, TABLE_NAME, GET_ARG_COUNT(__VA_ARGS__), \
+                 __VA_ARGS__)
+
+template <typename T>
+inline auto iguana_reflect_type(const T &t);
+
 inline std::unordered_map<
     std::string_view,
     std::vector<std::pair<std::string_view, std::string_view>>>
     g_iguana_custom_map;
 template <typename T>
 inline constexpr auto get_iguana_struct_map() {
-  using reflect_members = decltype(iguana_reflect_members(std::declval<T>()));
+  using reflect_members = decltype(iguana_reflect_type(std::declval<T>()));
   if constexpr (reflect_members::value() == 0) {
     return std::array<int, 0>{};
   }
@@ -640,10 +693,16 @@ inline constexpr auto get_iguana_struct_map() {
   }
 }
 
-#define REFLECTION(STRUCT_NAME, ...) \
-  MAKE_META_DATA(STRUCT_NAME, GET_ARG_COUNT(__VA_ARGS__), __VA_ARGS__)
+#define REFLECTION(STRUCT_NAME, ...)                                    \
+  MAKE_META_DATA(STRUCT_NAME, #STRUCT_NAME, GET_ARG_COUNT(__VA_ARGS__), \
+                 __VA_ARGS__)
 
 #define REFLECTION_EMPTY(STRUCT_NAME) MAKE_META_DATA_EMPTY(STRUCT_NAME)
+
+#define REFLECTION_ALIAS(STRUCT_NAME, ALIAS, ...) \
+  REFLECTION_ALIAS_IMPL(                          \
+      STRUCT_NAME, ALIAS,                         \
+      std::tuple_size_v<decltype(std::make_tuple(__VA_ARGS__))>, __VA_ARGS__)
 
 #ifdef _MSC_VER
 #define IGUANA_UNIQUE_VARIABLE(str) MACRO_CONCAT(str, __COUNTER__)
@@ -704,6 +763,12 @@ inline int add_custom_fields(std::string_view key,
   return 0;
 }
 
+#ifdef _MSC_VER
+#define IGUANA_UNIQUE_VARIABLE(str) MACRO_CONCAT(str, __COUNTER__)
+#else
+#define IGUANA_UNIQUE_VARIABLE(str) MACRO_CONCAT(str, __LINE__)
+#endif
+
 #define CUSTOM_FIELDS_IMPL(STRUCT_NAME, N, ...)                                \
   inline auto IGUANA_UNIQUE_VARIABLE(STRUCT_NAME) = iguana::add_custom_fields( \
       #STRUCT_NAME, {MARCO_EXPAND(MACRO_CONCAT(CON_STR, N)(__VA_ARGS__))});
@@ -715,11 +780,47 @@ template <typename T>
 using Reflect_members = decltype(iguana_reflect_members(std::declval<T>()));
 
 template <typename T, typename = void>
+struct is_public_reflection : std::false_type {};
+
+template <typename T>
+struct is_public_reflection<
+    T, std::void_t<decltype(iguana_reflect_members(std::declval<T>()))>>
+    : std::true_type {};
+
+template <typename T>
+constexpr bool is_public_reflection_v = is_public_reflection<T>::value;
+
+template <typename T, typename = void>
+struct is_private_reflection : std::false_type {};
+
+template <typename T>
+struct is_private_reflection<
+    T, std::void_t<decltype(std::declval<T>().iguana_reflect_members(
+           std::declval<T>()))>> : std::true_type {};
+
+template <typename T>
+constexpr bool is_private_reflection_v = is_private_reflection<T>::value;
+
+template <typename T, typename = void>
 struct is_reflection : std::false_type {};
 
 template <typename T>
-struct is_reflection<T, std::void_t<decltype(Reflect_members<T>::arr())>>
+struct is_reflection<T, std::enable_if_t<is_private_reflection_v<T>>>
     : std::true_type {};
+
+template <typename T>
+struct is_reflection<T, std::enable_if_t<is_public_reflection_v<T>>>
+    : std::true_type {};
+
+template <typename T>
+inline auto iguana_reflect_type(const T &t) {
+  if constexpr (is_public_reflection_v<T>) {
+    return iguana_reflect_members(t);
+  }
+  else {
+    return t.iguana_reflect_members(t);
+  }
+}
 
 template <typename T>
 inline constexpr bool is_reflection_v = is_reflection<T>::value;
@@ -743,19 +844,14 @@ constexpr int element_index_helper() {
 
 template <template <typename...> typename Condition, typename T>
 constexpr int tuple_element_index() {
-  using M = decltype(iguana_reflect_members(std::declval<T>()));
+  using M = decltype(iguana_reflect_type(std::declval<T>()));
   using Tuple = decltype(M::apply_impl());
   return element_index_helper<0, Condition, Tuple, T>();
 }
 
-#if _MSC_VER || (__cplusplus >= 201402L)
-template <class T>
-concept refletable = is_reflection_v<std::remove_cvref_t<T>>;
-#endif
-
 template <size_t I, typename T>
 constexpr decltype(auto) get(T &&t) {
-  using M = decltype(iguana_reflect_members(std::forward<T>(t)));
+  using M = decltype(iguana_reflect_type(std::forward<T>(t)));
   using U = decltype(std::forward<T>(t).*(std::get<I>(M::apply_impl())));
 
   if constexpr (std::is_array_v<U>) {
@@ -785,39 +881,45 @@ constexpr auto get_impl(T &t, std::index_sequence<Is...>) {
 
 template <typename T>
 constexpr auto get(T const &t) {
-  using M = decltype(iguana_reflect_members(t));
+  using M = decltype(iguana_reflect_type(t));
   return get_impl(t, std::make_index_sequence<M::value()>{});
 }
 
 template <typename T>
 constexpr auto get_ref(T &t) {
-  using M = decltype(iguana_reflect_members(t));
+  using M = decltype(iguana_reflect_type(t));
   return get_impl(t, std::make_index_sequence<M::value()>{});
 }
 
 template <typename T, size_t I>
 constexpr const auto get_name() {
-  using M = decltype(iguana_reflect_members(std::declval<T>()));
+  using M = decltype(iguana_reflect_type(std::declval<T>()));
   static_assert(I < M::value(), "out of range");
   return M::arr()[I];
 }
 
 template <typename T>
 constexpr const auto get_name(size_t i) {
-  using M = decltype(iguana_reflect_members(std::declval<T>()));
+  using M = decltype(iguana_reflect_type(std::declval<T>()));
   //		static_assert(I<M::value(), "out of range");
   return M::arr()[i];
 }
 
 template <typename T>
 constexpr const std::string_view get_name() {
-  using M = decltype(iguana_reflect_members(std::declval<T>()));
+  using M = decltype(iguana_reflect_type(std::declval<T>()));
   return M::name();
 }
 
 template <typename T>
+constexpr const std::string_view get_fields() {
+  using M = Reflect_members<T>;
+  return M::fields();
+}
+
+template <typename T>
 constexpr std::enable_if_t<is_reflection<T>::value, size_t> get_value() {
-  using M = decltype(iguana_reflect_members(std::declval<T>()));
+  using M = decltype(iguana_reflect_type(std::declval<T>()));
   return M::value();
 }
 
@@ -828,7 +930,7 @@ constexpr std::enable_if_t<!is_reflection<T>::value, size_t> get_value() {
 
 template <typename T>
 constexpr auto get_array() {
-  using M = decltype(iguana_reflect_members(std::declval<T>()));
+  using M = decltype(iguana_reflect_type(std::declval<T>()));
   return M::arr();
 }
 
@@ -863,7 +965,7 @@ inline std::string_view get_custom_fields(std::string_view origin) {
 
 template <typename T>
 constexpr auto get_index(std::string_view name) {
-  using M = decltype(iguana_reflect_members(std::declval<T>()));
+  using M = decltype(iguana_reflect_type(std::declval<T>()));
   constexpr auto arr = M::arr();
 
   auto it = std::find_if(arr.begin(), arr.end(), [name](auto str) {
@@ -898,7 +1000,7 @@ constexpr void for_each(const std::tuple<Args...> &t, F &&f,
 
 template <typename T, typename F>
 constexpr std::enable_if_t<is_reflection<T>::value> for_each(T &&t, F &&f) {
-  using M = decltype(iguana_reflect_members(std::forward<T>(t)));
+  using M = decltype(iguana_reflect_type(std::forward<T>(t)));
   for_each(M::apply_impl(), std::forward<F>(f),
            std::make_index_sequence<M::value()>{});
 }
@@ -906,7 +1008,6 @@ constexpr std::enable_if_t<is_reflection<T>::value> for_each(T &&t, F &&f) {
 template <typename T, typename F>
 constexpr std::enable_if_t<is_tuple<std::decay_t<T>>::value> for_each(T &&t,
                                                                       F &&f) {
-  // using M = decltype(iguana_reflect_members(std::forward<T>(t)));
   constexpr const size_t SIZE = std::tuple_size_v<std::decay_t<T>>;
   for_each(std::forward<T>(t), std::forward<F>(f),
            std::make_index_sequence<SIZE>{});

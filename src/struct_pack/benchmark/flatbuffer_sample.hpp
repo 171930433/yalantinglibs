@@ -35,7 +35,7 @@ inline void create<fb::rect32s>(flatbuffers::FlatBufferBuilder &builder,
                                 size_t object_count) {
   static std::vector<fb::rect32> rects_vector;
   rects_vector.clear();
-  rects_vector.assign(object_count, fb::rect32{1, 11, 1111, 1111111});
+  rects_vector.assign(object_count, fb::rect32{1, 0, 11, 1});
   auto rects = builder.CreateVectorOfStructs(rects_vector);
   auto orc = fb::Createrect32s(builder, rects);
   builder.Finish(orc);
@@ -44,7 +44,7 @@ inline void create<fb::rect32s>(flatbuffers::FlatBufferBuilder &builder,
 template <>
 inline void create<fb::rect32>(flatbuffers::FlatBufferBuilder &builder,
                                size_t object_count) {
-  const auto orc = fb::rect32{1, 11, 1111, 1111111};
+  const auto orc = fb::rect32{1, 0, 11, 1};
   auto offset = builder.CreateStruct(orc);
   builder.Finish(offset);
 }
@@ -55,7 +55,7 @@ inline void create<fb::persons>(flatbuffers::FlatBufferBuilder &builder,
   static std::vector<flatbuffers::Offset<fb::person>> persons_vector;
   persons_vector.clear();
   for (int i = 0; i < object_count; i++) {
-    auto name = builder.CreateString("Sword");
+    auto name = builder.CreateString(std::string(1024, 'A'));
     auto person = fb::Createperson(builder, 24, name, 432798, 65536.42);
     persons_vector.emplace_back(person);
   }
@@ -201,7 +201,6 @@ struct flatbuffer_sample_t : public base_sample {
       uint64_t ns = 0;
       std::string bench_name =
           name() + " serialize " + get_sample_name(sample_type);
-
       {
         ScopedTimer timer(bench_name.data(), ns);
         for (int i = 0; i < ITERATIONS; ++i) {
@@ -222,10 +221,14 @@ struct flatbuffer_sample_t : public base_sample {
     uint64_t ns = 0;
     std::string bench_name =
         name() + " deserialize " + get_sample_name(sample_type);
-    ScopedTimer timer(bench_name.data(), ns);
-    for (int i = 0; i < ITERATIONS; ++i) {
-      auto obj = flatbuffers::GetRoot<fb::Monsters>(builder.GetBufferPointer());
-      no_op((char *)obj);
+    {
+      ScopedTimer timer(bench_name.data(), ns);
+      for (int i = 0; i < ITERATIONS; ++i) {
+        auto obj =
+            flatbuffers::GetRoot<fb::Monsters>(builder.GetBufferPointer());
+        no_op((char *)obj);
+        no_op((char *)&builder);
+      }
     }
     deser_time_elapsed_map_.emplace(sample_type, ns);
   }
