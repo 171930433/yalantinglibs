@@ -3,6 +3,16 @@
 #include <string>
 
 #include "addressbook.struct_pb.h"
+#include "ylt/struct_json/json_reader.h"
+#include "ylt/struct_json/json_writer.h"
+
+namespace tutorial {
+
+REFLECTION(AddressBook, people);
+REFLECTION(Person, name, id, email, phones);
+REFLECTION(PhoneNumber, number, type);
+}  // namespace tutorial
+
 void prompt_for_address(tutorial::Person& person) {
   std::cout << "==================================" << std::endl;
   std::cout << "            Add People            " << std::endl;
@@ -16,7 +26,7 @@ void prompt_for_address(tutorial::Person& person) {
   std::getline(std::cin, person.email);
   while (true) {
     std::cout << "Enter a phone number (or leave blank to finish): ";
-    tutorial::Person::PhoneNumber phone_number;
+    tutorial::PhoneNumber phone_number;
     std::getline(std::cin, phone_number.number);
     if (phone_number.number.empty()) {
       break;
@@ -25,13 +35,13 @@ void prompt_for_address(tutorial::Person& person) {
     std::string type;
     std::getline(std::cin, type);
     if (type == "mobile") {
-      phone_number.type = tutorial::Person::PhoneType::MOBILE;
+      phone_number.type = tutorial::PhoneNumber::PhoneType::MOBILE;
     }
     else if (type == "home") {
-      phone_number.type = tutorial::Person::PhoneType::HOME;
+      phone_number.type = tutorial::PhoneNumber::PhoneType::HOME;
     }
     else if (type == "work") {
-      phone_number.type = tutorial::Person::PhoneType::WORK;
+      phone_number.type = tutorial::PhoneNumber::PhoneType::WORK;
     }
     else {
       std::cout << "Unknown phone type: Using default." << std::endl;
@@ -51,13 +61,13 @@ void list_people(const tutorial::AddressBook& address_book) {
     }
     for (const auto& phone : person.phones) {
       switch (phone.type) {
-        case tutorial::Person::PhoneType::MOBILE:
+        case tutorial::PhoneNumber::PhoneType::MOBILE:
           std::cout << "Mobile phone #: ";
           break;
-        case tutorial::Person::PhoneType::HOME:
+        case tutorial::PhoneNumber::PhoneType::HOME:
           std::cout << "  Home phone #: ";
           break;
-        case tutorial::Person::PhoneType::WORK:
+        case tutorial::PhoneNumber::PhoneType::WORK:
           std::cout << "  Work phone #: ";
           break;
       }
@@ -91,14 +101,19 @@ int main(int argc, char* argv[]) {
     }
   }
   list_people(address_book);
-  address_book.people.emplace_back();
-  prompt_for_address(address_book.people.back());
-  std::fstream output(argv[1],
-                      std::ios::out | std::ios::trunc | std::ios::binary);
-  std::string buffer = struct_pb::serialize<std::string>(address_book);
-  output.write(buffer.data(), buffer.size());
-  output.close();
-  list_people(address_book);
+
+  std::string str;
+  struct_json::to_json(address_book, str);
+  std::cout << str << "\n";
+
+  // address_book.people.emplace_back();
+  // prompt_for_address(address_book.people.back());
+  // std::fstream output(argv[1],
+  //                     std::ios::out | std::ios::trunc | std::ios::binary);
+  // std::string buffer = struct_pb::serialize<std::string>(address_book);
+  // output.write(buffer.data(), buffer.size());
+  // output.close();
+  // list_people(address_book);
   std::cout << "Done!!!" << std::endl;
   return 0;
 }
