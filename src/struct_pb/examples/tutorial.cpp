@@ -6,7 +6,9 @@
 #include "ylt/struct_json/json_reader.h"
 #include "ylt/struct_json/json_writer.h"
 
-namespace tutorial {
+namespace tutorial = MyInner;
+
+namespace MyInner {
 
 REFLECTION(AddressBook, people);
 REFLECTION(Person, name, id, email, phones);
@@ -115,5 +117,15 @@ int main(int argc, char* argv[]) {
   // output.close();
   // list_people(address_book);
   std::cout << "Done!!!" << std::endl;
+  return 0;
+}
+
+
+int main()
+{
+
+  tutorial::AddressBook address_book;
+
+
   return 0;
 }

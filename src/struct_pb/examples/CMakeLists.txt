@@ -22,6 +22,20 @@ endif()
 
 find_package(Protobuf QUIET)
 if (Protobuf_FOUND)
-    add_executable(struct_pb_tutorial tutorial.cpp)
-    target_protos_struct_pb(struct_pb_tutorial PRIVATE addressbook.proto)
+
+    # generate .pb.cc .pb.h
+    protobuf_generate_cpp(PROTO_SRCS
+    PROTO_HDRS
+    addressbook.proto
+    )
+    add_executable(struct_pb_tutorial tutorial.cpp           
+      ${PROTO_SRCS}
+      ${PROTO_HDRS})
+      target_link_libraries(struct_pb_tutorial protobuf::libprotobuf)
+
+    target_include_directories(struct_pb_tutorial PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+
+    target_protos_struct_pb(struct_pb_tutorial PRIVATE addressbook.proto
+    OPTION "namespace=MyInner")
+
 endif()
