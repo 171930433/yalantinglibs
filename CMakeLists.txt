@@ -30,3 +30,6 @@ if(CMAKE_PROJECT_NAME STREQUAL "yaLanTingLibs") # if ylt is top-level project
         include(cmake/subdir.cmake)
 endif()
 
+include(cmake/struct_pb.cmake)
+add_subdirectory(src/struct_pb)
+

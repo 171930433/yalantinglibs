@@ -59,3 +59,4 @@ cdb.json
 # build
 /build
 /install_dir
+/install

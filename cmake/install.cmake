@@ -44,3 +44,5 @@ if (INSTALL_THIRDPARTY)
                 )
         endif()
 endif()
+
+install(FILES cmake/struct_pb_helper.cmake DESTINATION cmake/)
