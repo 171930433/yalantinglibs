@@ -13,6 +13,10 @@ class EnumGenerator : public GeneratorBase {
   void generate(google::protobuf::io::Printer *p);
   void generate_definition(google::protobuf::io::Printer *p);
 
+  // added
+  void generateMapDeclaration(google::protobuf::io::Printer *p);
+  void generateMapDefinition(google::protobuf::io::Printer *p);
+
  private:
   const google::protobuf::EnumDescriptor *d_;
 };

@@ -324,5 +324,12 @@ void EnumFieldGenerator::generate_calculate_size_only(
   p->Print({{"value", value}},
            "calculate_varint_size(static_cast<uint64_t>($value$))");
 }
+
+void EnumFieldGenerator::generate_to_string(
+    google::protobuf::io::Printer *p) const {
+  Formatter format(p);
+  p->Print({{"name", d_->name()}}, "ss << to_string(t.$name$) << std::endl;\n");
+}
+
 }  // namespace compiler
 }  // namespace struct_pb

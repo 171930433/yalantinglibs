@@ -26,6 +26,16 @@ class FileGenerator : public GeneratorBase {
   void generate_ns_open(google::protobuf::io::Printer *p);
   void generate_ns_close(google::protobuf::io::Printer *p);
 
+  // added
+  void generate_message_tostring_func_definitions(
+      google::protobuf::io::Printer *p);
+
+  void generate_message_tostring_func_source(
+      google::protobuf::io::Printer *p);
+
+  void generate_enum_mapper_decls(google::protobuf::io::Printer *p);
+
+
  private:
   const google::protobuf::FileDescriptor *file_;
   std::vector<std::unique_ptr<MessageGenerator>> message_generators_;

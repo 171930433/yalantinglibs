@@ -15,6 +15,10 @@ class MessageFieldGenerator : public FieldGenerator {
   void generate_deserialization(google::protobuf::io::Printer *p,
                                 const std::string &value) const override;
   std::string cpp_type_name() const override;
+
+  // added
+  void generate_to_string(google::protobuf::io::Printer *p) const override;
+
 };
 class RepeatedMessageFieldGenerator : public FieldGenerator {
  public:
@@ -33,6 +37,9 @@ class RepeatedMessageFieldGenerator : public FieldGenerator {
   void generate_deserialization(google::protobuf::io::Printer *p,
                                 const std::string &value) const override;
   std::string cpp_type_name() const override;
+
+  // added
+  void generate_to_string(google::protobuf::io::Printer *p) const override;
 };
 }  // namespace compiler
 }  // namespace struct_pb

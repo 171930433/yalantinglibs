@@ -38,6 +38,9 @@ class FieldGenerator : public GeneratorBase {
   virtual std::string cpp_type_name() const;
   virtual std::string pb_type_name() const;
 
+  // added
+  virtual void generate_to_string(google::protobuf::io::Printer *p) const;
+
  protected:
   std::string get_type_name() const;
   bool is_ptr() const;

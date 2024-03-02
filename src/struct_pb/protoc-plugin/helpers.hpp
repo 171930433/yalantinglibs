@@ -19,6 +19,7 @@ inline bool is_map_entry(const google::protobuf::Descriptor *descriptor) {
 void flatten_messages_in_file(
     const google::protobuf::FileDescriptor *file,
     std::vector<const google::protobuf::Descriptor *> *result);
+
 inline std::vector<const google::protobuf::Descriptor *>
 flatten_messages_in_file(const google::protobuf::FileDescriptor *file) {
   std::vector<const google::protobuf::Descriptor *> ret;
@@ -55,6 +56,39 @@ inline void flatten_messages_in_file(
                      });
   }
 }
+
+// added 展开枚举类型
+void flatten_enums_in_file(
+    const google::protobuf::FileDescriptor *file,
+    std::vector<const google::protobuf::EnumDescriptor *> *result);
+
+inline std::vector<const google::protobuf::EnumDescriptor *>
+flatten_enums_in_file(const google::protobuf::FileDescriptor *file) {
+  std::vector<const google::protobuf::EnumDescriptor *> ret;
+  flatten_enums_in_file(file, &ret);
+  return ret;
+}
+
+inline void flatten_enums_in_file(
+    const google::protobuf::FileDescriptor *file,
+    std::vector<const google::protobuf::EnumDescriptor *> *result) {
+  for (int i = 0; i < file->enum_type_count(); ++i) {
+    result->push_back(file->enum_type(i));
+  }
+  // enum in class
+  for (int i = 0; i < file->message_type_count(); ++i) {
+    for_each_message(file->message_type(i),
+                     [&](const google::protobuf::Descriptor *descriptor) {
+                       if (is_map_entry(descriptor)) {
+                         return;
+                       }
+                       for (int i = 0; i < descriptor->enum_type_count(); ++i) {
+                         result->push_back(descriptor->enum_type(i));
+                       }
+                     });
+  }
+}
+
 inline std::string resolve_keyword(const std::string &name) {
   // clang-format off
   static std::set<std::string> keyword_set{
@@ -231,6 +265,7 @@ inline std::string qualified_class_name(const google::protobuf::Descriptor *d,
                                         const Options &options) {
   return qualified_file_level_symbol(d->file(), class_name(d), options);
 }
+
 
 inline std::string qualified_enum_name(
     const google::protobuf::EnumDescriptor *d, const Options &options) {

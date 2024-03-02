@@ -237,7 +237,7 @@ std::string FieldGenerator::get_type_name() const {
           return m->name();
         }
         else {
-          return "std::unique_ptr<" +
+          return "std::optional<" +
                  qualified_class_name(d_->message_type(), options_) + ">";
         }
       }
@@ -384,7 +384,7 @@ void OneofGenerator::generate_definition(google::protobuf::io::Printer *p) {
     std::string type_name = fg.get_type_name();
     if (is_message(f)) {
       type_name = qualified_class_name(f->message_type(), options_);
-      type_name = "std::unique_ptr<" + type_name + ">";
+      type_name = "std::optional<" + type_name + ">";
     }
     else if (is_enum(f)) {
       type_name = qualified_enum_name(f->enum_type(), options_);
@@ -553,5 +553,13 @@ const FieldGenerator &FieldGeneratorMap::get(
     const FieldDescriptor *field) const {
   return *field_generators_[field->index()];
 }
+
+void FieldGenerator::generate_to_string(
+    google::protobuf::io::Printer *p) const {
+  Formatter format(p);
+
+  format("ss << \"$1$ $2$ = \" << t.$2$ << std::endl;\n", cpp_type_name(), name());
+}
+
 }  // namespace compiler
 }  // namespace struct_pb

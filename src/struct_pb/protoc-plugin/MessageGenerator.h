@@ -13,10 +13,13 @@ class MessageGenerator : public GeneratorBase {
   void generate_struct_definition(google::protobuf::io::Printer *p);
   void generate_source(google::protobuf::io::Printer *p);
 
+
  private:
   void generate_get_needed_size(google::protobuf::io::Printer *p);
   void generate_serialize_to(google::protobuf::io::Printer *p);
   void generate_deserialize_to(google::protobuf::io::Printer *p);
+  // added
+  void generate_to_string_to(google::protobuf::io::Printer *p);
 
  private:
   const google::protobuf::Descriptor *d_;

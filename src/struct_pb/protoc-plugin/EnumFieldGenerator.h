@@ -24,6 +24,9 @@ class EnumFieldGenerator : public FieldGenerator {
       google::protobuf::io::Printer *p, const std::string &output,
       const std::string &max_size = "size") const;
 
+  // added
+  void generate_to_string(google::protobuf::io::Printer *p) const override;
+
  private:
   std::string default_value() const;
 };

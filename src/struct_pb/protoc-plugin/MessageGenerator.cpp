@@ -205,5 +205,32 @@ switch(tag) {
   format.outdent();
   format("}\n");
 }
+
+void MessageGenerator::generate_to_string_to(google::protobuf::io::Printer *p) {
+  Formatter format(p);
+  std::vector<const FieldDescriptor *> fs;
+  fs.reserve(d_->field_count());
+  for (int i = 0; i < d_->field_count(); ++i) {
+    fs.push_back(d_->field(i));
+  }
+  std::sort(fs.begin(), fs.end(),
+            [](const FieldDescriptor *lhs, const FieldDescriptor *rhs) {
+              return lhs->number() < rhs->number();
+            });
+  format.indent();
+  format("std::stringstream ss;\n");
+  format.outdent();
+
+  for (int i = 0; i < d_->field_count(); ++i) {
+    auto f = fs[i];
+    format.indent();
+    fg_map_.get(f).generate_to_string(p);
+    format.outdent();
+  }
+  format.indent();
+  format("return ss.str();\n");
+  format.outdent();
+}
+
 }  // namespace compiler
 }  // namespace struct_pb

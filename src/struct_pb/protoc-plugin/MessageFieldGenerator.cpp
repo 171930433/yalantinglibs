@@ -60,7 +60,7 @@ void MessageFieldGenerator::generate_deserialization(
 )");
 }
 std::string MessageFieldGenerator::cpp_type_name() const {
-  return "std::unique_ptr<" +
+  return "std::optional<" +
          qualified_class_name(d_->message_type(), options_) + ">";
 }
 
@@ -141,6 +141,25 @@ for(const auto& e: $value$) {
   serialize_varint(data, pos, size, sz);
   serialize_to(data+pos, sz, e);
   pos += sz;
+}
+)");
+}
+
+void MessageFieldGenerator::generate_to_string(
+    google::protobuf::io::Printer *p) const {
+  Formatter format(p);
+  p->Print({{"name", name()}}, 
+R"(if(t.$name$) {ss << to_string(*t.$name$) << std::endl;}
+)");
+}
+
+// added
+void RepeatedMessageFieldGenerator::generate_to_string(
+    google::protobuf::io::Printer *p) const {
+  p->Print({{"name", name()}}, 
+R"(ss << "sizeof t.$name$ :" << t.$name$.size() << std::endl;
+for(const auto& e: t.$name$) {
+  ss << to_string(e) << std::endl;
 }
 )");
 }
