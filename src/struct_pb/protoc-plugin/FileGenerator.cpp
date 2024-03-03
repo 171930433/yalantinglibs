@@ -63,8 +63,9 @@ void FileGenerator::generate_header(google::protobuf::io::Printer *p) {
 #include <type_traits>
 #include <variant>
 #include <vector>
+#include <eigen3/Eigen/Dense>
 
-#include "ylt/struct_pb.hpp"
+// #include "ylt/struct_pb.hpp"
 )");
 
   generate_dependency_includes(p);  // 包含的其他头文件
@@ -80,7 +81,13 @@ void FileGenerator::generate_fwd_decls(google::protobuf::io::Printer *p) {
   Formatter format(p);
   for (int i = 0; i < file_->message_type_count(); ++i) {
     auto m = file_->message_type(i);
-    format("struct $1$;\n", resolve_keyword(m->name()));
+    auto eigen_typename = m->options().GetExtension(eigen_typen_name);
+    if (eigen_typename.empty()) {
+      format("struct $1$;\n", resolve_keyword(m->name()));
+    }
+    else {
+      format("using $1$ = $2$;\n", resolve_keyword(m->name()), eigen_typename);
+    }
     std::cerr << " i= " << i << ", name = " << m->name() << "\n";
   }
 }
@@ -90,10 +97,11 @@ void FileGenerator::generate_dependency_includes(
   for (int i = 0; i < file_->dependency_count(); ++i) {
     auto dep = file_->dependency(i);
     std::string basename = strip_proto(dep->name());
+    if(basename == "proto_to_struct") {continue;}
     std::string header_name = basename + ".struct_pb.h";
     format("#include \"$1$\"\n", header_name);
     //
-    std::cout << "\n header_name = " << header_name << "\n";
+    std::cerr << "\n header_name = " << header_name << "\n";
   }
 }
 void FileGenerator::generate_source(google::protobuf::io::Printer *p) {

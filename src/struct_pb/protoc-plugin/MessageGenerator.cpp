@@ -48,6 +48,12 @@ static std::string UnderscoresToCamelCase(const std::string &input,
 void MessageGenerator::generate_struct_definition(
     google::protobuf::io::Printer *p) {
   //  auto v = p->WithVars(ClassVars(d_, options_));
+
+  // added 跳过eigen类型的定义
+  if (!d_->options().GetExtension(eigen_typen_name).empty()) {
+    return;
+  }
+
   Formatter format(p);
   format("struct $1$ {\n", resolve_keyword(d_->name()));
   format.indent();
@@ -221,12 +227,20 @@ void MessageGenerator::generate_to_string_to(google::protobuf::io::Printer *p) {
   format("std::stringstream ss;\n");
   format.outdent();
 
-  for (int i = 0; i < d_->field_count(); ++i) {
-    auto f = fs[i];
-    format.indent();
-    fg_map_.get(f).generate_to_string(p);
-    format.outdent();
+  if (!d_->options().GetExtension(eigen_typen_name).empty()) {
+      format.indent();
+      format("ss << t << std::endl;\n");
+      format.outdent();
   }
+  else {
+    for (int i = 0; i < d_->field_count(); ++i) {
+      auto f = fs[i];
+      format.indent();
+      fg_map_.get(f).generate_to_string(p);
+      format.outdent();
+    }
+  }
+
   format.indent();
   format("return ss.str();\n");
   format.outdent();

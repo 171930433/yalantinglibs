@@ -27,6 +27,7 @@ if (Protobuf_FOUND)
     protobuf_generate_cpp(PROTO_SRCS
     PROTO_HDRS
     addressbook.proto
+    proto_to_struct.proto
     )
     add_executable(struct_pb_tutorial tutorial.cpp           
       ${PROTO_SRCS}
@@ -35,7 +36,7 @@ if (Protobuf_FOUND)
 
     target_include_directories(struct_pb_tutorial PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
-    target_protos_struct_pb(struct_pb_tutorial PRIVATE addressbook.proto
+    target_protos_struct_pb(struct_pb_tutorial PRIVATE addressbook.proto 
     OPTION "namespace=MyInner")
 
 endif()

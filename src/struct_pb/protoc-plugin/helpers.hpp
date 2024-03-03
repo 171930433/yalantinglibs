@@ -7,6 +7,8 @@
 #include "google/protobuf/descriptor.h"
 #include "google/protobuf/descriptor.pb.h"
 #include "google/protobuf/io/printer.h"
+
+
 namespace struct_pb {
 namespace compiler {
 using namespace google::protobuf;

@@ -1,5 +1,6 @@
 #include <google/protobuf/compiler/plugin.h>
 
+
 #include "StructGenerator.h"
 using namespace struct_pb::compiler;
 using namespace google::protobuf::compiler;
