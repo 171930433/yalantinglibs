@@ -8,7 +8,7 @@ EnumFieldGenerator::EnumFieldGenerator(const FieldDescriptor *descriptor,
     : FieldGenerator(descriptor, options) {}
 std::string EnumFieldGenerator::cpp_type_name() const {
   auto name = qualified_enum_name(d_->enum_type(), options_);
-  if (is_optional()) {
+  if (is_optional()&&false) {
     return "std::optional<" + name + ">";
   }
   return name;
@@ -17,7 +17,7 @@ void EnumFieldGenerator::generate_calculate_size(
     google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   Formatter format(p);
-  if (is_optional()) {
+  if (is_optional()&&false) {
     format("if ($1$.has_value()) {\n", value);
     format.indent();
     format("total += $1$ + ", calculate_tag_size(d_));
@@ -60,7 +60,7 @@ void EnumFieldGenerator::generate_serialization(
     google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   // auto v = p->WithVars({{"tag", calculate_tag(d_)}, {"value", value}});
-  if (is_optional()) {
+  if (is_optional()&&false) {
     p->Print({{"tag", calculate_tag_str(d_)}, {"value", value}}, R"(
 if ($value$.has_value()) {
 )");
@@ -328,7 +328,7 @@ void EnumFieldGenerator::generate_calculate_size_only(
 void EnumFieldGenerator::generate_to_string(
     google::protobuf::io2::Printer *p) const {
   Formatter format(p);
-  p->Print({{"name", d_->name()}}, "ss << to_string(t.$name$) << std::endl;\n");
+  p->Print({{"name", d_->name()}}, "j[\"$name$\"] = t.$name$;\n");
 }
 
 }  // namespace compiler

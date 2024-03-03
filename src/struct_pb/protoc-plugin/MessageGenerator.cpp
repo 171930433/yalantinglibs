@@ -225,13 +225,10 @@ void MessageGenerator::generate_to_string_to(google::protobuf::io2::Printer *p) 
             [](const FieldDescriptor *lhs, const FieldDescriptor *rhs) {
               return lhs->number() < rhs->number();
             });
-  format.indent();
-  format("std::stringstream ss;\n");
-  format.outdent();
-
+  
   if (!d_->options().GetExtension(eigen_type_name).empty()) {
       format.indent();
-      format("ss << t << std::endl;\n");
+      format("// need edit;\n");
       format.outdent();
   }
   else {
@@ -242,10 +239,6 @@ void MessageGenerator::generate_to_string_to(google::protobuf::io2::Printer *p) 
       format.outdent();
     }
   }
-
-  format.indent();
-  format("return ss.str();\n");
-  format.outdent();
 }
 
 }  // namespace compiler

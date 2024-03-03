@@ -61,7 +61,7 @@ void EnumGenerator::generateMapDefinition(google::protobuf::io2::Printer *p)
   format.outdent();
   // tostring
   format.indent();
-  format("return k$1$_EnumToString[t];\n", resolve_keyword(d_->name()));
+  format("j = k$1$_EnumToString[t];\n", resolve_keyword(d_->name()));
   format.outdent();
 
   

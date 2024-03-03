@@ -152,7 +152,7 @@ std::string calculate_tag_size(const FieldDescriptor *f, bool ignore_repeated) {
 
 std::string get_comment(const FieldDescriptor *d_) {
   std::string comment;
-  if (d_->is_optional()) {
+  if (d_->is_optional() && false) {
     comment += "optional ";
   }
   if (d_->is_repeated()) {
@@ -237,8 +237,9 @@ std::string FieldGenerator::get_type_name() const {
           return m->name();
         }
         else {
-          return "std::optional<" +
-                 qualified_class_name(d_->message_type(), options_) + ">";
+          // return "std::optional<" +
+          //        qualified_class_name(d_->message_type(), options_) + ">";
+                 return  qualified_class_name(d_->message_type(), options_);
         }
       }
     }
@@ -290,7 +291,7 @@ void FieldGenerator::generate_serialization(
   //  p->Print({{"comment", comment}}, R"(
   //// $comment$
   //)");
-  //  if (is_optional()) {
+  //  if (is_optional()&&false) {
   //    p->Print(R"(
   // if ($name$.has_value()) {
   //)");
@@ -317,9 +318,9 @@ bool FieldGenerator::is_optional() const {
   if (p && is_map_entry(p)) {
     return false;
   }
-  //  return d_->is_optional();
+  //  return d_->is_optional() && false;
   //  return d_->has_optional_keyword() && !is_message(d_);
-  return d_->is_optional();
+  return d_->is_optional() && false;
 }
 std::string FieldGenerator::qualified_name() const {
   if (is_message(d_)) {
@@ -384,7 +385,7 @@ void OneofGenerator::generate_definition(google::protobuf::io2::Printer *p) {
     std::string type_name = fg.get_type_name();
     if (is_message(f)) {
       type_name = qualified_class_name(f->message_type(), options_);
-      type_name = "std::optional<" + type_name + ">";
+      // type_name = "std::optional<" + type_name + ">";
     }
     else if (is_enum(f)) {
       type_name = qualified_enum_name(f->enum_type(), options_);
@@ -558,7 +559,7 @@ void FieldGenerator::generate_to_string(
     google::protobuf::io2::Printer *p) const {
   Formatter format(p);
 
-  format("ss << \"$1$ $2$ = \" << t.$2$ << std::endl;\n", cpp_type_name(), name());
+  format("j[\"$1$\"] = t.$1$;\n", name());
 }
 
 }  // namespace compiler

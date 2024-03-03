@@ -37,7 +37,7 @@ void PrimitiveFieldGenerator::generate_calculate_size(
     google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   Formatter format(p);
-  if (is_optional()) {
+  if (is_optional()&&false) {
     format("if ($1$.has_value()) {\n", value);
     format.indent();
     format("total += $1$ + ", calculate_tag_size(d_));
@@ -87,7 +87,7 @@ void PrimitiveFieldGenerator::generate_calculate_size_only(
 
 std::string PrimitiveFieldGenerator::cpp_type_name() const {
   std::string type_name = get_type_name_help(d_->type());
-  if (is_optional()) {
+  if (is_optional()&&false) {
     type_name = "std::optional<" + type_name + ">";
   }
   return type_name;
@@ -96,7 +96,7 @@ void PrimitiveFieldGenerator::generate_serialization(
     google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   Formatter format(p);
-  if (is_optional()) {
+  if (is_optional()&&false) {
     format("if ($1$.has_value()) {\n", value);
     format.indent();
     format("serialize_varint(data, pos, size, $1$);\n", calculate_tag_str(d_));

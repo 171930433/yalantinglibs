@@ -68,14 +68,15 @@ void FileGenerator::generate_header(google::protobuf::io2::Printer *p) {
 #include <vector>
 #include <eigen3/Eigen/Dense>
 
-// #include "ylt/struct_pb.hpp"
+#include "nlohmann/json.hpp"
+
 )");
 
   generate_dependency_includes(p);  // 包含的其他头文件
   generate_ns_open(p);              // 写命名空间
   generate_shared_header_code(p);
-  generate_ns_close(p);  // 关闭命名空间
   generate_message_tostring_func_definitions(p);
+  generate_ns_close(p);  // 关闭命名空间
   // generate_message_struct_pb_func_definitions(p);
   p->Print("// clang-format on\n");
 }
@@ -109,7 +110,11 @@ void FileGenerator::generate_dependency_includes(
 }
 void FileGenerator::generate_source(google::protobuf::io2::Printer *p) {
   // generate_message_struct_pb_func_source(p);
+  generate_ns_open(p);              // 写命名空间
+
   generate_message_tostring_func_source(p);
+  generate_ns_close(p);  // 关闭命名空间
+
 }
 void FileGenerator::generate_message_struct_pb_func_definitions(
     google::protobuf::io2::Printer *p) {
@@ -221,12 +226,12 @@ void FileGenerator::generate_message_tostring_func_definitions(
     google::protobuf::io2::Printer *p) {
   std::vector<const Descriptor *> msgs = flatten_messages_in_file(file_);
   Formatter format(p);
-  format("namespace struct_pb {\n");
-  format("namespace internal {\n");
+
+  
   for (auto msg : msgs) {
     auto name = qualified_class_name(msg, options_);
     format("// $1$\n", name);
-    format("std::string to_string($1$ const& t);\n", name);
+    format("void to_json(nlohmann::json& j, $1$ const& t);\n", name);
     format("\n");
   }
 
@@ -235,25 +240,21 @@ void FileGenerator::generate_message_tostring_func_definitions(
   for (auto single_enum : enums) {
     auto name = qualified_enum_name(single_enum, options_);
     format("// $1$\n", name);
-    format("std::string to_string($1$ const& t);\n", name);
+    format("void to_json(nlohmann::json& j, $1$ const& t);\n", name);
     format("\n");
   }
 
-  format("} // internal\n");
-  format("} // struct_pb\n");
 }
 
 void FileGenerator::generate_message_tostring_func_source(
     google::protobuf::io2::Printer *p) {
   std::vector<const Descriptor *> msgs = flatten_messages_in_file(file_);
   Formatter format(p);
-  format("namespace struct_pb {\n");
-  format("namespace internal {\n");
   for (auto msg : msgs) {
     auto name = qualified_class_name(msg, options_);
     MessageGenerator g(msg, options_);
     format("// $1$\n", name);
-    format("std::string to_string($1$ const& t) { // $1$ \n", name);
+    format("void to_json(nlohmann::json& j, $1$ const& t) { // $1$ \n", name);
     g.generate_to_string_to(p);
     format("}\n");
   }
@@ -264,14 +265,12 @@ void FileGenerator::generate_message_tostring_func_source(
     auto name = qualified_enum_name(single_enum, options_);
     EnumGenerator g(single_enum, options_);
     format("// $1$\n", name);
-    format("std::string to_string($1$ const& t) { // $1$ \n", name);
+    format("void to_json(nlohmann::json& j, $1$ const& t) { // $1$ \n", name);
     g.generateMapDefinition(p);
     format("}\n");
     
   }
 
-  format("} // internal\n");
-  format("} // struct_pb\n");
 }
 
 }  // namespace compiler

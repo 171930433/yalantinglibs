@@ -40,6 +40,8 @@ function(protobuf_generate_modified)
         set(_plugin "--plugin=${protobuf_generate_PLUGIN}")
     endif()
 
+    # message(status !!!!!!!!${protobuf_generate_PLUGIN})
+
     if(NOT protobuf_generate_GENERATE_EXTENSIONS)
         if(protobuf_generate_LANGUAGE STREQUAL cpp)
             set(protobuf_generate_GENERATE_EXTENSIONS .pb.h .pb.cc)
@@ -112,6 +114,11 @@ function(protobuf_generate_modified)
             list(APPEND _generated_srcs ${_descriptor_file})
         endif()
         list(APPEND _generated_srcs_all ${_generated_srcs})
+
+
+        # message(status _out!!!!!!!!${protobuf_generate_LANGUAGE}_out})
+        # message(status _opt!!!!!!!!${_opt}${protobuf_generate_PROTOC_OUT_DIR})
+
 
         add_custom_command(
                 OUTPUT ${_generated_srcs}

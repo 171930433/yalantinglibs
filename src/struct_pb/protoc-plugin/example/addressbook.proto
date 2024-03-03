@@ -3,7 +3,7 @@ syntax = "proto3";
 import "proto_to_struct.proto";
 
 
-package tutorial;
+package innerclass;
 
 enum MyType {
   ABC = 0;

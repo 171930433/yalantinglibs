@@ -15,7 +15,7 @@ void StringFieldGenerator::generate_calculate_size(
     bool can_ignore_default_value) const {
   Formatter format(p);
   auto tag_sz = calculate_tag_size(d_);
-  if (is_optional()) {
+  if (is_optional()&&false) {
     format("if ($1$.has_value()) {\n", value);
     format.indent();
     format("total += $1$ + calculate_varint_size($2$->size()) + $2$->size();\n",
@@ -42,7 +42,7 @@ void StringFieldGenerator::generate_serialization(
     google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   Formatter format(p);
-  if (is_optional()) {
+  if (is_optional()&&false) {
     format("if ($1$.has_value()) {\n", value);
     format.indent();
     generate_serialization_only(p, value + ".value()");
@@ -71,7 +71,7 @@ void StringFieldGenerator::generate_serialization_only(
   format("pos += $1$.size();\n", value);
 }
 std::string StringFieldGenerator::cpp_type_name() const {
-  if (d_->is_optional()) {
+  if (d_->is_optional() && false) {
     return "std::optional<std::string>";
   }
   return "std::string";
@@ -98,7 +98,7 @@ void StringFieldGenerator::generate_deserialization(
   Formatter format(p);
   format("case $1$: {\n", calculate_tag_str(d_));
   format.indent();
-  if (is_optional()) {
+  if (is_optional()&&false) {
     format("if (!$1$.has_value()) {\n", value);
     format.indent();
     format("$1$ = std::string();\n", value);
