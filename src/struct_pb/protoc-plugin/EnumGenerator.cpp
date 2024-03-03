@@ -3,7 +3,7 @@
 #include "helpers.hpp"
 namespace struct_pb {
 namespace compiler {
-void EnumGenerator::generate(google::protobuf::io::Printer *p) {
+void EnumGenerator::generate(google::protobuf::io2::Printer *p) {
   std::string enum_name = resolve_keyword(d_->name());
   p->Print({{"enum_name", enum_name}}, R"(
 enum class $enum_name$ {
@@ -21,7 +21,7 @@ $name$ = $value$,
 };
 )");
 }
-void EnumGenerator::generate_definition(google::protobuf::io::Printer *p) {
+void EnumGenerator::generate_definition(google::protobuf::io2::Printer *p) {
   Formatter format(p);
   format("enum class $1$: int {\n", resolve_keyword(d_->name()));
   format.indent();
@@ -34,7 +34,7 @@ void EnumGenerator::generate_definition(google::protobuf::io::Printer *p) {
   format("};\n");
 }
 
-void EnumGenerator::generateMapDeclaration(google::protobuf::io::Printer *p)
+void EnumGenerator::generateMapDeclaration(google::protobuf::io2::Printer *p)
 {
   Formatter format(p);
 
@@ -42,7 +42,7 @@ void EnumGenerator::generateMapDeclaration(google::protobuf::io::Printer *p)
   
 }
 
-void EnumGenerator::generateMapDefinition(google::protobuf::io::Printer *p)
+void EnumGenerator::generateMapDefinition(google::protobuf::io2::Printer *p)
 {
   Formatter format(p);
   // 定义静态的map

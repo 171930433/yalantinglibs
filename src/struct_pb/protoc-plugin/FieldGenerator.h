@@ -20,26 +20,26 @@ class FieldGenerator : public GeneratorBase {
   FieldGenerator(const google::protobuf::FieldDescriptor *d,
                  const Options &options)
       : GeneratorBase(options), d_(d) {}
-  void generate_definition(google::protobuf::io::Printer *p) const;
-  void generate_calculate_size(google::protobuf::io::Printer *p,
+  void generate_definition(google::protobuf::io2::Printer *p) const;
+  void generate_calculate_size(google::protobuf::io2::Printer *p,
                                bool can_ignore_default_value) const;
-  void generate_serialization(google::protobuf::io::Printer *p,
+  void generate_serialization(google::protobuf::io2::Printer *p,
                               bool can_ignore_default_value) const;
-  void generate_deserialization(google::protobuf::io::Printer *p) const;
+  void generate_deserialization(google::protobuf::io2::Printer *p) const;
 
-  virtual void generate_calculate_size(google::protobuf::io::Printer *p,
+  virtual void generate_calculate_size(google::protobuf::io2::Printer *p,
                                        const std::string &value,
                                        bool can_ignore_default_value) const;
-  virtual void generate_serialization(google::protobuf::io::Printer *p,
+  virtual void generate_serialization(google::protobuf::io2::Printer *p,
                                       const std::string &value,
                                       bool can_ignore_default_value) const;
-  virtual void generate_deserialization(google::protobuf::io::Printer *p,
+  virtual void generate_deserialization(google::protobuf::io2::Printer *p,
                                         const std::string &value) const;
   virtual std::string cpp_type_name() const;
   virtual std::string pb_type_name() const;
 
   // added
-  virtual void generate_to_string(google::protobuf::io::Printer *p) const;
+  virtual void generate_to_string(google::protobuf::io2::Printer *p) const;
 
  protected:
   std::string get_type_name() const;
@@ -57,11 +57,11 @@ class OneofGenerator : public GeneratorBase {
   OneofGenerator(const google::protobuf::OneofDescriptor *d,
                  const Options &options)
       : GeneratorBase(options), d_(d) {}
-  void generate_definition(google::protobuf::io::Printer *p);
-  void generate_calculate_size(google::protobuf::io::Printer *p);
-  void generate_serialization(google::protobuf::io::Printer *p,
+  void generate_definition(google::protobuf::io2::Printer *p);
+  void generate_calculate_size(google::protobuf::io2::Printer *p);
+  void generate_serialization(google::protobuf::io2::Printer *p,
                               const google::protobuf::FieldDescriptor *f);
-  void generate_deserialization(google::protobuf::io::Printer *p,
+  void generate_deserialization(google::protobuf::io2::Printer *p,
                                 const google::protobuf::FieldDescriptor *f);
 
  private:

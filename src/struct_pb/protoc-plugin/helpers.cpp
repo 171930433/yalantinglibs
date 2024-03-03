@@ -21,7 +21,7 @@ static std::vector<std::string> split(const std::string &s, char delim) {
   split(s, delim, std::back_inserter(elems));
   return elems;
 }
-NamespaceOpener::NamespaceOpener(google::protobuf::io::Printer *p,
+NamespaceOpener::NamespaceOpener(google::protobuf::io2::Printer *p,
                                  const std::string &package)
     : p_(p) {
   ns_ = split(package, '.');

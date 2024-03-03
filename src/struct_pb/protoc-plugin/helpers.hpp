@@ -2,12 +2,14 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <algorithm>
 
 #include "Options.hpp"
 #include "google/protobuf/descriptor.h"
 #include "google/protobuf/descriptor.pb.h"
-#include "google/protobuf/io/printer.h"
+// #include "google/protobuf/io/printer.h"
 
+#include "printer.h"
 
 namespace struct_pb {
 namespace compiler {
@@ -276,7 +278,7 @@ inline std::string qualified_enum_name(
 
 class Formatter {
  public:
-  Formatter(google::protobuf::io::Printer *printer) : printer_(printer) {}
+  Formatter(google::protobuf::io2::Printer *printer) : printer_(printer) {}
   void indent() const { printer_->Indent(); }
   void outdent() const { printer_->Outdent(); }
   template <typename... Args>
@@ -293,13 +295,13 @@ class Formatter {
   }
 
  private:
-  google::protobuf::io::Printer *printer_;
+  google::protobuf::io2::Printer *printer_;
   std::map<std::string, std::string> vars_;
 };
 
 class NamespaceOpener {
  public:
-  NamespaceOpener(google::protobuf::io::Printer *p,
+  NamespaceOpener(google::protobuf::io2::Printer *p,
                   const std::string &package = {});
   ~NamespaceOpener();
 
@@ -309,7 +311,7 @@ class NamespaceOpener {
 
  private:
   std::vector<std::string> ns_;
-  google::protobuf::io::Printer *p_;
+  google::protobuf::io2::Printer *p_;
 };
 std::string strip_proto(const std::string &filename);
 }  // namespace compiler

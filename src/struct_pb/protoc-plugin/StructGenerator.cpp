@@ -5,6 +5,7 @@
 #include "FileGenerator.h"
 #include "Options.hpp"
 #include "google/protobuf/descriptor.pb.h"
+#include <google/protobuf/io/zero_copy_stream.h>
 #include "helpers.hpp"
 namespace struct_pb {
 namespace compiler {
@@ -38,7 +39,7 @@ bool StructGenerator::Generate(
   {
     std::unique_ptr<io::ZeroCopyOutputStream> output(
         generator_context->Open(basename + ".struct_pb.h"));
-    google::protobuf::io::Printer p(output.get(), '$');
+    google::protobuf::io2::Printer p(output.get(), '$');
     p.Print({{"parameter", parameter}}, R"(// protoc generate parameter
 // clang-format off
 // $parameter$
@@ -52,7 +53,7 @@ bool StructGenerator::Generate(
   {
     std::unique_ptr<io::ZeroCopyOutputStream> output(
         generator_context->Open(basename + ".struct_pb.cc"));
-    google::protobuf::io::Printer p(output.get(), '$');
+    google::protobuf::io2::Printer p(output.get(), '$');
     p.Print(
         {{"parameter", parameter}, {"header_file", basename + ".struct_pb.h"}},
         R"(// protoc generate parameter

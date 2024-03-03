@@ -11,20 +11,20 @@ class PrimitiveFieldGenerator : public FieldGenerator {
   PrimitiveFieldGenerator(const PrimitiveFieldGenerator &) = delete;
   PrimitiveFieldGenerator &operator=(const PrimitiveFieldGenerator &) = delete;
   std::string cpp_type_name() const override;
-  void generate_calculate_size(google::protobuf::io::Printer *p,
+  void generate_calculate_size(google::protobuf::io2::Printer *p,
                                const std::string &value,
                                bool can_ignore_default_value) const override;
-  void generate_calculate_size_only(google::protobuf::io::Printer *p,
+  void generate_calculate_size_only(google::protobuf::io2::Printer *p,
                                     const std::string &value) const;
-  void generate_serialization(google::protobuf::io::Printer *p,
+  void generate_serialization(google::protobuf::io2::Printer *p,
                               const std::string &value,
                               bool can_ignore_default_value) const override;
-  void generate_serialization_only(google::protobuf::io::Printer *p,
+  void generate_serialization_only(google::protobuf::io2::Printer *p,
                                    const std::string &value) const;
-  void generate_deserialization(google::protobuf::io::Printer *p,
+  void generate_deserialization(google::protobuf::io2::Printer *p,
                                 const std::string &value) const override;
   void generate_deserialization_only(
-      google::protobuf::io::Printer *p, const std::string &output,
+      google::protobuf::io2::Printer *p, const std::string &output,
       const std::string &max_size = "size") const;
 };
 class RepeatedPrimitiveFieldGenerator : public FieldGenerator {
@@ -33,21 +33,21 @@ class RepeatedPrimitiveFieldGenerator : public FieldGenerator {
                                   const Options &options);
   std::string cpp_type_name() const override;
   void generate_calculate_size(
-      google::protobuf::io::Printer *p, const std::string &value = {},
+      google::protobuf::io2::Printer *p, const std::string &value = {},
       bool can_ignore_default_value = true) const override;
-  void generate_calculate_packed_size_only(google::protobuf::io::Printer *p,
+  void generate_calculate_packed_size_only(google::protobuf::io2::Printer *p,
                                            const std::string &value) const;
-  void generate_calculate_unpacked_size_only(google::protobuf::io::Printer *p,
+  void generate_calculate_unpacked_size_only(google::protobuf::io2::Printer *p,
                                              const std::string &value) const;
-  void generate_serialization(google::protobuf::io::Printer *p,
+  void generate_serialization(google::protobuf::io2::Printer *p,
                               const std::string &value,
                               bool can_ignore_default_value) const override;
-  void generate_deserialization(google::protobuf::io::Printer *p,
+  void generate_deserialization(google::protobuf::io2::Printer *p,
                                 const std::string &value) const override;
-  void generate_deserialization_packed_only(google::protobuf::io::Printer *p,
+  void generate_deserialization_packed_only(google::protobuf::io2::Printer *p,
                                             const std::string &value,
                                             const std::string &max_size) const;
-  void generate_deserialization_unpacked_only(google::protobuf::io::Printer *p,
+  void generate_deserialization_unpacked_only(google::protobuf::io2::Printer *p,
                                               const std::string &output) const;
 
  private:

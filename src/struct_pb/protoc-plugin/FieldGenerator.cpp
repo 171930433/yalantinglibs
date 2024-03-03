@@ -152,7 +152,7 @@ std::string calculate_tag_size(const FieldDescriptor *f, bool ignore_repeated) {
 
 std::string get_comment(const FieldDescriptor *d_) {
   std::string comment;
-  if (d_->has_optional_keyword()) {
+  if (d_->is_optional()) {
     comment += "optional ";
   }
   if (d_->is_repeated()) {
@@ -174,7 +174,7 @@ std::string get_comment(const FieldDescriptor *d_) {
 }
 
 void FieldGenerator::generate_definition(
-    google::protobuf::io::Printer *p) const {
+    google::protobuf::io2::Printer *p) const {
   p->Print(
       {
           {"type", cpp_type_name()},
@@ -254,7 +254,7 @@ std::string FieldGenerator::get_type_name() const {
 }
 
 void FieldGenerator::generate_calculate_size(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   //  auto name = value.empty() ? "t." + this->name() : value;
   //  auto tag = calculate_tag(d_);
@@ -279,7 +279,7 @@ void FieldGenerator::generate_calculate_size(
 }
 
 void FieldGenerator::generate_serialization(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   //  auto name = value.empty() ? "t." + this->name() : value;
   //  auto tag = calculate_tag(d_);
@@ -302,7 +302,7 @@ void FieldGenerator::generate_serialization(
   //    generate_serialize_one(p, name, can_ignore_default_value);
   //  }
 }
-void FieldGenerator::generate_deserialization(google::protobuf::io::Printer *p,
+void FieldGenerator::generate_deserialization(google::protobuf::io2::Printer *p,
                                               const std::string &value) const {}
 bool FieldGenerator::is_ptr() const {
   auto p = d_->containing_type();
@@ -319,7 +319,7 @@ bool FieldGenerator::is_optional() const {
   }
   //  return d_->is_optional();
   //  return d_->has_optional_keyword() && !is_message(d_);
-  return d_->has_presence();
+  return d_->is_optional();
 }
 std::string FieldGenerator::qualified_name() const {
   if (is_message(d_)) {
@@ -334,48 +334,48 @@ std::string FieldGenerator::qualified_name() const {
 }
 std::string FieldGenerator::pb_type_name() const { return d_->type_name(); }
 void FieldGenerator::generate_calculate_size(
-    google::protobuf::io::Printer *p, bool can_ignore_default_value) const {
-  auto oneof = d_->real_containing_oneof();
-  if (oneof) {
-    generate_calculate_size(p, "t." + resolve_keyword(oneof->name()),
-                            can_ignore_default_value);
-  }
-  else {
-    generate_calculate_size(p, "t." + name(), can_ignore_default_value);
-  }
+    google::protobuf::io2::Printer *p, bool can_ignore_default_value) const {
+  // auto oneof = d_->containing_oneof();
+  // if (oneof) {
+  //   generate_calculate_size(p, "t." + resolve_keyword(oneof->name()),
+  //                           can_ignore_default_value);
+  // }
+  // else {
+  //   generate_calculate_size(p, "t." + name(), can_ignore_default_value);
+  // }
 }
 void FieldGenerator::generate_serialization(
-    google::protobuf::io::Printer *p, bool can_ignore_default_value) const {
-  auto oneof = d_->real_containing_oneof();
-  if (oneof) {
-    generate_serialization(p, "t." + resolve_keyword(oneof->name()),
-                           can_ignore_default_value);
-  }
-  else {
-    Formatter format(p);
-    format("// ");
-    generate_definition(p);
-    generate_serialization(p, "t." + name(), can_ignore_default_value);
-  }
+    google::protobuf::io2::Printer *p, bool can_ignore_default_value) const {
+  // auto oneof = d_->containing_oneof();
+  // if (oneof) {
+  //   generate_serialization(p, "t." + resolve_keyword(oneof->name()),
+  //                          can_ignore_default_value);
+  // }
+  // else {
+  //   Formatter format(p);
+  //   format("// ");
+  //   generate_definition(p);
+  //   generate_serialization(p, "t." + name(), can_ignore_default_value);
+  // }
 }
 void FieldGenerator::generate_deserialization(
-    google::protobuf::io::Printer *p) const {
-  auto oneof = d_->real_containing_oneof();
-  if (oneof) {
-    generate_deserialization(p, "t." + resolve_keyword(oneof->name()));
-  }
-  else {
-    Formatter format(p);
-    format("// ");
-    generate_definition(p);
-    generate_deserialization(p, "t." + name());
-  }
+    google::protobuf::io2::Printer *p) const {
+  // auto oneof = d_->containing_oneof();
+  // if (oneof) {
+  //   generate_deserialization(p, "t." + resolve_keyword(oneof->name()));
+  // }
+  // else {
+  //   Formatter format(p);
+  //   format("// ");
+  //   generate_definition(p);
+  //   generate_deserialization(p, "t." + name());
+  // }
 }
 std::string FieldGenerator::cpp_type_name() const {
   assert(false && "why?");
   return "???";
 }
-void OneofGenerator::generate_definition(google::protobuf::io::Printer *p) {
+void OneofGenerator::generate_definition(google::protobuf::io2::Printer *p) {
   p->Print(R"(std::variant<std::monostate
 )");
   for (int i = 0; i < d_->field_count(); ++i) {
@@ -417,7 +417,7 @@ void OneofGenerator::generate_definition(google::protobuf::io::Printer *p) {
     }
   }
 }
-void OneofGenerator::generate_calculate_size(google::protobuf::io::Printer *p) {
+void OneofGenerator::generate_calculate_size(google::protobuf::io2::Printer *p) {
   Formatter format(p);
   format("{\n");
   format.indent();
@@ -444,7 +444,7 @@ case 0: {
   format("}\n");
 }
 void OneofGenerator::generate_serialization(
-    google::protobuf::io::Printer *p,
+    google::protobuf::io2::Printer *p,
     const google::protobuf::FieldDescriptor *f) {
   //  auto index = get_index(f);
   //  assert(index != 0);
@@ -463,7 +463,7 @@ void OneofGenerator::generate_serialization(
   //  format("}\n");
 }
 void OneofGenerator::generate_deserialization(
-    google::protobuf::io::Printer *p,
+    google::protobuf::io2::Printer *p,
     const google::protobuf::FieldDescriptor *f) {
   //  auto index = get_index(f);
   //  assert(index != 0);
@@ -515,7 +515,7 @@ FieldGenerator *FieldGeneratorMap::MakeGenerator(const FieldDescriptor *field,
         return new RepeatedPrimitiveFieldGenerator(field, options);
     }
   }
-  else if (field->real_containing_oneof()) {
+  else if (field->containing_oneof()) {
     return new OneofFieldGenerator(field, options);
     //    switch (field->cpp_type()) {
     //    case FieldDescriptor::CPPTYPE_MESSAGE:
@@ -555,7 +555,7 @@ const FieldGenerator &FieldGeneratorMap::get(
 }
 
 void FieldGenerator::generate_to_string(
-    google::protobuf::io::Printer *p) const {
+    google::protobuf::io2::Printer *p) const {
   Formatter format(p);
 
   format("ss << \"$1$ $2$ = \" << t.$2$ << std::endl;\n", cpp_type_name(), name());

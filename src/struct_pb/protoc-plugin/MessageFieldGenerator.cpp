@@ -6,7 +6,7 @@ MessageFieldGenerator::MessageFieldGenerator(const FieldDescriptor *field,
                                              const Options &options)
     : FieldGenerator(field, options) {}
 void MessageFieldGenerator::generate_calculate_size(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   if (can_ignore_default_value) {
     p->Print({{"tag_sz", calculate_tag_size(d_)}, {"value", value}}, R"(
@@ -24,7 +24,7 @@ total += $tag_sz$ + calculate_varint_size(sz) + sz;
   }
 }
 void MessageFieldGenerator::generate_serialization(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   p->Print({{"value", value}, {"tag", calculate_tag_str(d_)}}, R"(
 if ($value$) {
@@ -37,7 +37,7 @@ if ($value$) {
 )");
 }
 void MessageFieldGenerator::generate_deserialization(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   p->Print({{"value", value},
             {"tag", calculate_tag_str(d_)},
             {"classname", qualified_class_name(d_->message_type(), options_)}},
@@ -68,7 +68,7 @@ RepeatedMessageFieldGenerator::RepeatedMessageFieldGenerator(
     const FieldDescriptor *field, const Options &options)
     : FieldGenerator(field, options) {}
 void RepeatedMessageFieldGenerator::generate_calculate_size(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   Formatter format(p);
   if (can_ignore_default_value) {
@@ -83,7 +83,7 @@ void RepeatedMessageFieldGenerator::generate_calculate_size(
   }
 }
 void RepeatedMessageFieldGenerator::generate_serialization(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   Formatter format(p);
   if (can_ignore_default_value) {
@@ -98,7 +98,7 @@ void RepeatedMessageFieldGenerator::generate_serialization(
   }
 }
 void RepeatedMessageFieldGenerator::generate_deserialization(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   p->Print({{"tag", std::to_string(calculate_tag(d_))},
             {"value", value},
             {"classname", qualified_class_name(d_->message_type(), options_)}},
@@ -124,7 +124,7 @@ std::string RepeatedMessageFieldGenerator::cpp_type_name() const {
          ">";
 }
 void RepeatedMessageFieldGenerator::generate_calculate_size_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   p->Print({{"tag_sz", calculate_tag_size(d_)}, {"value", value}}, R"(
 for(const auto& e: $value$) {
   std::size_t sz = get_needed_size(e);
@@ -133,7 +133,7 @@ for(const auto& e: $value$) {
 )");
 }
 void RepeatedMessageFieldGenerator::generate_serialization_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   p->Print({{"tag", std::to_string(calculate_tag(d_))}, {"value", value}}, R"(
 for(const auto& e: $value$) {
   serialize_varint(data, pos, size, $tag$);
@@ -146,7 +146,7 @@ for(const auto& e: $value$) {
 }
 
 void MessageFieldGenerator::generate_to_string(
-    google::protobuf::io::Printer *p) const {
+    google::protobuf::io2::Printer *p) const {
   Formatter format(p);
   p->Print({{"name", name()}}, 
 R"(if(t.$name$) {ss << to_string(*t.$name$) << std::endl;}
@@ -155,7 +155,7 @@ R"(if(t.$name$) {ss << to_string(*t.$name$) << std::endl;}
 
 // added
 void RepeatedMessageFieldGenerator::generate_to_string(
-    google::protobuf::io::Printer *p) const {
+    google::protobuf::io2::Printer *p) const {
   p->Print({{"name", name()}}, 
 R"(ss << "sizeof t.$name$ :" << t.$name$.size() << std::endl;
 for(const auto& e: t.$name$) {

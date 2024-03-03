@@ -34,7 +34,7 @@ PrimitiveFieldGenerator::PrimitiveFieldGenerator(
     const FieldDescriptor *descriptor, const Options &options)
     : FieldGenerator(descriptor, options) {}
 void PrimitiveFieldGenerator::generate_calculate_size(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   Formatter format(p);
   if (is_optional()) {
@@ -64,7 +64,7 @@ void PrimitiveFieldGenerator::generate_calculate_size(
   }
 }
 void PrimitiveFieldGenerator::generate_calculate_size_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   Formatter format(p);
   if (is_varint(d_)) {
     if (is_sint(d_)) {
@@ -93,7 +93,7 @@ std::string PrimitiveFieldGenerator::cpp_type_name() const {
   return type_name;
 }
 void PrimitiveFieldGenerator::generate_serialization(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   Formatter format(p);
   if (is_optional()) {
@@ -124,7 +124,7 @@ void PrimitiveFieldGenerator::generate_serialization(
   }
 }
 void PrimitiveFieldGenerator::generate_serialization_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   Formatter format(p);
   if (is_varint(d_)) {
     if (is_sint(d_)) {
@@ -153,7 +153,7 @@ pos += $sz$;
   }
 }
 void PrimitiveFieldGenerator::generate_deserialization(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   Formatter format(p);
   format("case $1$: {\n", calculate_tag_str(d_));
   format.indent();
@@ -163,7 +163,7 @@ void PrimitiveFieldGenerator::generate_deserialization(
   format("}\n");
 }
 void PrimitiveFieldGenerator::generate_deserialization_only(
-    google::protobuf::io::Printer *p, const std::string &output,
+    google::protobuf::io2::Printer *p, const std::string &output,
     const std::string &max_size) const {
   if (is_varint(d_)) {
     p->Print({{"output", output},
@@ -247,7 +247,7 @@ RepeatedPrimitiveFieldGenerator::RepeatedPrimitiveFieldGenerator(
     const FieldDescriptor *descriptor, const Options &options)
     : FieldGenerator(descriptor, options) {}
 void RepeatedPrimitiveFieldGenerator::generate_calculate_size(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   Formatter format(p);
   PrimitiveFieldGenerator g(d_, options_);
@@ -278,7 +278,7 @@ std::string RepeatedPrimitiveFieldGenerator::cpp_type_name() const {
   return "std::vector<" + get_type_name_help(d_->type()) + ">";
 }
 void RepeatedPrimitiveFieldGenerator::generate_calculate_packed_size_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   Formatter format(p);
   PrimitiveFieldGenerator g(d_, options_);
   if (is_varint(d_)) {
@@ -299,7 +299,7 @@ std::size_t container_total = $sz$ * $value$.size();
   }
 }
 void RepeatedPrimitiveFieldGenerator::generate_calculate_unpacked_size_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   PrimitiveFieldGenerator g(d_, options_);
   Formatter format(p);
   if (is_varint(d_)) {
@@ -324,7 +324,7 @@ std::size_t container_total = ($tag_sz$ + $sz$) * $value$.size();
   }
 }
 void RepeatedPrimitiveFieldGenerator::generate_serialization(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   PrimitiveFieldGenerator g(d_, options_);
   Formatter format(p);
@@ -367,7 +367,7 @@ void RepeatedPrimitiveFieldGenerator::generate_serialization(
   }
 }
 void RepeatedPrimitiveFieldGenerator::generate_deserialization(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   Formatter format(p);
   format("case $1$: {\n", unpacked_tag());
   format.indent();
@@ -394,7 +394,7 @@ void RepeatedPrimitiveFieldGenerator::generate_deserialization(
   format("}\n");
 }
 void RepeatedPrimitiveFieldGenerator::generate_deserialization_packed_only(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     const std::string &max_size) const {
   if (is_varint(d_)) {
     Formatter format(p);
@@ -445,7 +445,7 @@ std::string RepeatedPrimitiveFieldGenerator::unpacked_tag() const {
   return std::to_string(tag);
 }
 void RepeatedPrimitiveFieldGenerator::generate_deserialization_unpacked_only(
-    google::protobuf::io::Printer *p, const std::string &output) const {
+    google::protobuf::io2::Printer *p, const std::string &output) const {
   PrimitiveFieldGenerator g(d_, options_);
   g.generate_deserialization_only(p, output);
 }

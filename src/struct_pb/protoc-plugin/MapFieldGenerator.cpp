@@ -65,12 +65,12 @@ std::string MapFieldGenerator::get_kv_type_name_helper(
   }
 }
 void MapFieldGenerator::generate_calculate_size(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   generate_calculate_size_only(p, value);
 }
 void MapFieldGenerator::generate_calculate_size_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   Formatter format(p);
   format("for(const auto& e: $1$) {\n", value);
   format.indent();
@@ -85,7 +85,7 @@ void MapFieldGenerator::generate_calculate_size_only(
   format("}\n");
 }
 void MapFieldGenerator::generate_calculate_kv_size(
-    google::protobuf::io::Printer *p, const FieldDescriptor *f,
+    google::protobuf::io2::Printer *p, const FieldDescriptor *f,
     const std::string &value) const {
   Formatter format(p);
   switch (f->cpp_type()) {
@@ -120,12 +120,12 @@ map_entry_sz += $tag_sz$ + )");
   }
 }
 void MapFieldGenerator::generate_serialization(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   generate_serialization_only(p, value);
 }
 void MapFieldGenerator::generate_serialization_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   auto key_f = d_->message_type()->field(0);
   auto value_f = d_->message_type()->field(1);
   std::unique_ptr<FieldGenerator> kg;
@@ -164,7 +164,7 @@ void MapFieldGenerator::generate_serialization_only(
   format("}\n");
 }
 void MapFieldGenerator::generate_serialize_kv_only(
-    google::protobuf::io::Printer *p, const FieldDescriptor *f,
+    google::protobuf::io2::Printer *p, const FieldDescriptor *f,
     const std::string &value) const {
   switch (f->cpp_type()) {
     case FieldDescriptor::CPPTYPE_MESSAGE: {
@@ -196,7 +196,7 @@ serialize_varint(data, pos, size, $tag$);
   }
 }
 void MapFieldGenerator::generate_deserialization(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   p->Print({{"tag", calculate_tag_str(d_)}},
            R"(
 case $tag$: {
@@ -214,7 +214,7 @@ break;
 )");
 }
 void MapFieldGenerator::generate_deserialization_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   auto key_f = d_->message_type()->field(0);
   auto value_f = d_->message_type()->field(1);
   Formatter format(p);
@@ -257,7 +257,7 @@ $value$[key_tmp_val] = std::move(value_tmp_val);
 )");
 }
 void MapFieldGenerator::generate_deserialize_kv_only(
-    google::protobuf::io::Printer *p, const FieldDescriptor *f,
+    google::protobuf::io2::Printer *p, const FieldDescriptor *f,
     const std::string &value, const std::string &max_size) const {
   switch (f->cpp_type()) {
     case FieldDescriptor::CPPTYPE_MESSAGE: {

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.10)
 project(yaLanTingLibs
         VERSION 0.2.9
         DESCRIPTION "yaLanTingLibs"
@@ -16,17 +16,19 @@ include(cmake/install.cmake)
 
 if(CMAKE_PROJECT_NAME STREQUAL "yaLanTingLibs") # if ylt is top-level project
         # add include path
-        include_directories(include)
-        include_directories(include/ylt/thirdparty)
-        include_directories(src/include)
+        # include_directories(include)
+        # include_directories(include/ylt/thirdparty)
+        # include_directories(src/include)
 
-        include(cmake/utils.cmake)
-        include(cmake/struct_pb.cmake)
-        include(cmake/build.cmake)
-        include(cmake/develop.cmake)
-        # add project config, such as enable_ssl.
-        include(cmake/config.cmake)
-        # add project's source such as unit test, example & benchmark
-        include(cmake/subdir.cmake)
+        # include(cmake/utils.cmake)
+        # include(cmake/struct_pb.cmake)
+        # include(cmake/build.cmake)
+        # include(cmake/develop.cmake)
+        # # add project config, such as enable_ssl.
+        # include(cmake/config.cmake)
+        # # add project's source such as unit test, example & benchmark
+        # include(cmake/subdir.cmake)
 endif()
 
+
+# add_subdirectory(src/struct_pb/protoc-plugin)

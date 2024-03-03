@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+import "proto_to_struct.proto";
+
+
+package tutorial;
+
+enum MyType {
+  ABC = 0;
+  DEF = 1;
+  HIJ = 2;
+}
+
+message PointXYZ
+{
+  option(eigen_type_name) = "Eigen::Vector3d";
+
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+message PhoneNumber {
+  enum PhoneType {
+    MOBILE = 0;
+    HOME = 1;
+    WORK = 2;
+  }
+  string number = 1;
+  PhoneType type = 2;
+}
+
+message Person {
+
+  message TYPE3
+  {
+    string filed1 = 1;
+  };
+
+  string name = 1;
+  int32 id = 2;
+  string email = 3;
+
+  repeated PhoneNumber phones = 4;
+
+  TYPE3 my_type = 5;
+
+  PointXYZ pt_enu = 6;
+}
+
+message AddressBook {
+  repeated Person people = 1;
+  Person bob = 2;
+}

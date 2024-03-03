@@ -11,29 +11,29 @@ class FileGenerator : public GeneratorBase {
  public:
   FileGenerator(const google::protobuf::FileDescriptor *file, Options options);
   ;
-  void generate_header(google::protobuf::io::Printer *p);
-  void generate_source(google::protobuf::io::Printer *p);
+  void generate_header(google::protobuf::io2::Printer *p);
+  void generate_source(google::protobuf::io2::Printer *p);
 
  private:
-  void generate_shared_header_code(google::protobuf::io::Printer *p);
-  void generate_fwd_decls(google::protobuf::io::Printer *p);
-  void generate_enum_definitions(google::protobuf::io::Printer *p);
-  void generate_message_definitions(google::protobuf::io::Printer *p);
+  void generate_shared_header_code(google::protobuf::io2::Printer *p);
+  void generate_fwd_decls(google::protobuf::io2::Printer *p);
+  void generate_enum_definitions(google::protobuf::io2::Printer *p);
+  void generate_message_definitions(google::protobuf::io2::Printer *p);
   void generate_message_struct_pb_func_definitions(
-      google::protobuf::io::Printer *p);
-  void generate_message_struct_pb_func_source(google::protobuf::io::Printer *p);
-  void generate_dependency_includes(google::protobuf::io::Printer *p);
-  void generate_ns_open(google::protobuf::io::Printer *p);
-  void generate_ns_close(google::protobuf::io::Printer *p);
+      google::protobuf::io2::Printer *p);
+  void generate_message_struct_pb_func_source(google::protobuf::io2::Printer *p);
+  void generate_dependency_includes(google::protobuf::io2::Printer *p);
+  void generate_ns_open(google::protobuf::io2::Printer *p);
+  void generate_ns_close(google::protobuf::io2::Printer *p);
 
   // added
   void generate_message_tostring_func_definitions(
-      google::protobuf::io::Printer *p);
+      google::protobuf::io2::Printer *p);
 
   void generate_message_tostring_func_source(
-      google::protobuf::io::Printer *p);
+      google::protobuf::io2::Printer *p);
 
-  void generate_enum_mapper_decls(google::protobuf::io::Printer *p);
+  void generate_enum_mapper_decls(google::protobuf::io2::Printer *p);
 
 
  private:

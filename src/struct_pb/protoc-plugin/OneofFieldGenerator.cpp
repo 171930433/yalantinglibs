@@ -7,7 +7,7 @@
 namespace struct_pb {
 namespace compiler {
 void OneofFieldGenerator::generate_calculate_size(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   Formatter format(p);
   format("if ($1$.index() == $2$) {\n", value, index());
@@ -28,7 +28,7 @@ std::string OneofFieldGenerator::index() const {
   return std::to_string(index);
 }
 void OneofFieldGenerator::generate_calculate_size_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   Formatter format(p);
   auto oneof_value = "std::get<" + index() + ">(" + value + ")";
 
@@ -79,7 +79,7 @@ total += $tag_sz$ + calculate_varint_size()");
   }
 }
 void OneofFieldGenerator::generate_serialization(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   Formatter format(p);
   format("if ($1$.index() == $2$) {\n", value, index());
@@ -87,7 +87,7 @@ void OneofFieldGenerator::generate_serialization(
   format("\n}\n");
 }
 void OneofFieldGenerator::generate_serialization_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   auto oneof_value = "std::get<" + index() + ">(" + value + ")";
 
   switch (d_->cpp_type()) {
@@ -134,7 +134,7 @@ serialize_varint(data, pos, size, $tag$);
   }
 }
 void OneofFieldGenerator::generate_deserialization(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   Formatter format(p);
   format("case $1$: {\n", calculate_tag_str(d_));
   generate_deserialization_only(p, value);
@@ -142,7 +142,7 @@ void OneofFieldGenerator::generate_deserialization(
   format("}\n");
 }
 void OneofFieldGenerator::generate_deserialization_only(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     const std::string &max_size) const {
   Formatter format(p);
   std::string oneof_value = "std::get<" + index() + ">(" + value + ")";
@@ -220,7 +220,7 @@ MessageOneofFieldGenerator::MessageOneofFieldGenerator(
     : OneofFieldGenerator(descriptor, options) {}
 
 void MessageOneofFieldGenerator::generate_setter_and_getter(
-    google::protobuf::io::Printer *p) {
+    google::protobuf::io2::Printer *p) {
   auto oneof = d_->containing_oneof();
   assert(oneof);
   std::string type_name = get_type_name();
@@ -247,7 +247,7 @@ PrimitiveOneofFieldGenerator::PrimitiveOneofFieldGenerator(
     const FieldDescriptor *descriptor, const Options &options)
     : OneofFieldGenerator(descriptor, options) {}
 void PrimitiveOneofFieldGenerator::generate_setter_and_getter(
-    google::protobuf::io::Printer *p) {
+    google::protobuf::io2::Printer *p) {
   auto oneof = d_->containing_oneof();
   assert(oneof);
   std::string type_name = get_type_name();
@@ -272,7 +272,7 @@ StringOneofFieldGenerator::StringOneofFieldGenerator(
     const FieldDescriptor *descriptor, const Options &options)
     : OneofFieldGenerator(descriptor, options) {}
 void StringOneofFieldGenerator::generate_setter_and_getter(
-    google::protobuf::io::Printer *p) {
+    google::protobuf::io2::Printer *p) {
   auto oneof = d_->containing_oneof();
   assert(oneof);
   std::string type_name = get_type_name();
@@ -297,7 +297,7 @@ EnumOneofFieldGenerator::EnumOneofFieldGenerator(
     const FieldDescriptor *descriptor, const Options &options)
     : OneofFieldGenerator(descriptor, options) {}
 void EnumOneofFieldGenerator::generate_setter_and_getter(
-    google::protobuf::io::Printer *p) {
+    google::protobuf::io2::Printer *p) {
   auto oneof = d_->containing_oneof();
   assert(oneof);
   std::string type_name = get_type_name();

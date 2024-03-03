@@ -6,12 +6,12 @@ StringFieldGenerator::StringFieldGenerator(const FieldDescriptor *field,
                                            const Options &options)
     : FieldGenerator(field, options) {}
 void StringFieldGenerator::generate_calculate_size_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   Formatter format(p);
   format("$1$.size()", value);
 }
 void StringFieldGenerator::generate_calculate_size(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   Formatter format(p);
   auto tag_sz = calculate_tag_size(d_);
@@ -39,7 +39,7 @@ void StringFieldGenerator::generate_calculate_size(
   }
 }
 void StringFieldGenerator::generate_serialization(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   Formatter format(p);
   if (is_optional()) {
@@ -63,7 +63,7 @@ void StringFieldGenerator::generate_serialization(
   }
 }
 void StringFieldGenerator::generate_serialization_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   Formatter format(p);
   format("serialize_varint(data, pos, size, $1$);\n", calculate_tag_str(d_));
   format("serialize_varint(data, pos, size, $1$.size());\n", value);
@@ -71,13 +71,13 @@ void StringFieldGenerator::generate_serialization_only(
   format("pos += $1$.size();\n", value);
 }
 std::string StringFieldGenerator::cpp_type_name() const {
-  if (d_->has_presence()) {
+  if (d_->is_optional()) {
     return "std::optional<std::string>";
   }
   return "std::string";
 }
 void StringFieldGenerator::generate_deserialization_only(
-    google::protobuf::io::Printer *p, const std::string &output,
+    google::protobuf::io2::Printer *p, const std::string &output,
     const std::string &sz, const std::string &max_size) const {
   p->Print({{"output", output}, {"sz", sz}, {"max_size", max_size}},
            R"(uint64_t $sz$ = 0;
@@ -94,7 +94,7 @@ pos += $sz$;
 )");
 }
 void StringFieldGenerator::generate_deserialization(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   Formatter format(p);
   format("case $1$: {\n", calculate_tag_str(d_));
   format.indent();
@@ -120,7 +120,7 @@ std::string RepeatedStringFieldGenerator::cpp_type_name() const {
   return "std::vector<std::string>";
 }
 void RepeatedStringFieldGenerator::generate_calculate_size(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   Formatter format(p);
   format("for (const auto& s: $1$) {\n", value);
@@ -131,7 +131,7 @@ void RepeatedStringFieldGenerator::generate_calculate_size(
   format("}\n");
 }
 void RepeatedStringFieldGenerator::generate_calculate_only(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     const std::string &output) const {
   p->Print({{"value", value},
             {"tag_sz", calculate_tag_size(d_)},
@@ -144,7 +144,7 @@ for (const auto& s: $value$) {
 )");
 }
 void RepeatedStringFieldGenerator::generate_serialization(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   Formatter format(p);
   if (can_ignore_default_value) {
@@ -159,7 +159,7 @@ void RepeatedStringFieldGenerator::generate_serialization(
   }
 }
 void RepeatedStringFieldGenerator::generate_serialization_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   Formatter format(p);
   format("for(const auto& s: $1$) {\n", value);
   format.indent();
@@ -169,7 +169,7 @@ void RepeatedStringFieldGenerator::generate_serialization_only(
   format("}\n");
 }
 void RepeatedStringFieldGenerator::generate_deserialization(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   StringFieldGenerator g(d_, options_);
   Formatter format(p);
   format("case $1$: {\n", calculate_tag_str(d_));

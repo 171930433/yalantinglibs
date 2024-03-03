@@ -14,7 +14,7 @@ std::string EnumFieldGenerator::cpp_type_name() const {
   return name;
 }
 void EnumFieldGenerator::generate_calculate_size(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   Formatter format(p);
   if (is_optional()) {
@@ -57,7 +57,7 @@ total += $tag_sz$ + )");
   }
 }
 void EnumFieldGenerator::generate_serialization(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   // auto v = p->WithVars({{"tag", calculate_tag(d_)}, {"value", value}});
   if (is_optional()) {
@@ -88,14 +88,14 @@ if ($value$ != $default_value$) {
   }
 }
 void EnumFieldGenerator::generate_serialization_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   p->Print({{"tag", calculate_tag_str(d_)}, {"value", value}}, R"(
 serialize_varint(data, pos, size, $tag$);
 serialize_varint(data, pos, size, static_cast<uint64_t>($value$));
 )");
 }
 void EnumFieldGenerator::generate_deserialization(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   p->Print(
       {
           {"tag", calculate_tag_str(d_)},
@@ -111,7 +111,7 @@ case $tag$: {
 )");
 }
 void EnumFieldGenerator::generate_deserialization_only(
-    google::protobuf::io::Printer *p, const std::string &output,
+    google::protobuf::io2::Printer *p, const std::string &output,
     const std::string &max_size) const {
   auto enum_name = qualified_enum_name(d_->enum_type(), options_);
   p->Print(
@@ -133,7 +133,7 @@ std::string RepeatedEnumFieldGenerator::cpp_type_name() const {
 }
 
 void RepeatedEnumFieldGenerator::generate_calculate_size(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   if (can_ignore_default_value) {
     if (is_packed()) {
@@ -188,7 +188,7 @@ total += sz;
   }
 }
 void RepeatedEnumFieldGenerator::generate_calculate_size_only(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     const std::string &output) const {
   if (is_packed()) {
     p->Print({{"value", value},
@@ -216,7 +216,7 @@ for(const auto& v: $value$) {
 }
 
 void RepeatedEnumFieldGenerator::generate_serialization(
-    google::protobuf::io::Printer *p, const std::string &value,
+    google::protobuf::io2::Printer *p, const std::string &value,
     bool can_ignore_default_value) const {
   if (can_ignore_default_value) {
     p->Print({{"value", value}}, R"(
@@ -230,7 +230,7 @@ if (!$value$.empty()) {
   }
 }
 void RepeatedEnumFieldGenerator::generate_serialization_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   if (is_packed()) {
     p->Print({{"tag", std::to_string(calculate_tag(d_))}}, R"(
 serialize_varint(data, pos, size, $tag$);
@@ -256,7 +256,7 @@ for(const auto& v: $value$) {
   }
 }
 void RepeatedEnumFieldGenerator::generate_deserialization(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   // generate packed
   p->Print({{"tag", packed_tag()},
             {"value", value},
@@ -320,13 +320,13 @@ std::string EnumFieldGenerator::default_value() const {
          "::" + d_->default_value_enum()->name();
 }
 void EnumFieldGenerator::generate_calculate_size_only(
-    google::protobuf::io::Printer *p, const std::string &value) const {
+    google::protobuf::io2::Printer *p, const std::string &value) const {
   p->Print({{"value", value}},
            "calculate_varint_size(static_cast<uint64_t>($value$))");
 }
 
 void EnumFieldGenerator::generate_to_string(
-    google::protobuf::io::Printer *p) const {
+    google::protobuf::io2::Printer *p) const {
   Formatter format(p);
   p->Print({{"name", d_->name()}}, "ss << to_string(t.$name$) << std::endl;\n");
 }

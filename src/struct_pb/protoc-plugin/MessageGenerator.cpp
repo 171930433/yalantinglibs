@@ -3,6 +3,8 @@
 #include "EnumGenerator.h"
 #include "FieldGenerator.h"
 #include "helpers.hpp"
+#include <string_view>
+
 using namespace google::protobuf;
 using namespace google::protobuf::internal;
 namespace struct_pb {
@@ -46,11 +48,11 @@ static std::string UnderscoresToCamelCase(const std::string &input,
 }
 
 void MessageGenerator::generate_struct_definition(
-    google::protobuf::io::Printer *p) {
+    google::protobuf::io2::Printer *p) {
   //  auto v = p->WithVars(ClassVars(d_, options_));
 
   // added 跳过eigen类型的定义
-  if (!d_->options().GetExtension(eigen_typen_name).empty()) {
+  if (!d_->options().GetExtension(eigen_type_name).empty()) {
     return;
   }
 
@@ -129,7 +131,7 @@ void MessageGenerator::generate_struct_definition(
   format.outdent();
   format("};\n");
 }
-void MessageGenerator::generate_source(google::protobuf::io::Printer *p) {
+void MessageGenerator::generate_source(google::protobuf::io2::Printer *p) {
   generate_get_needed_size(p);
   Formatter format(p);
   format("std::string $1$::SerializeAsString() const {\n", d_->name());
@@ -148,7 +150,7 @@ void MessageGenerator::generate_source(google::protobuf::io::Printer *p) {
   format("}\n");
 }
 void MessageGenerator::generate_get_needed_size(
-    google::protobuf::io::Printer *p) {
+    google::protobuf::io2::Printer *p) {
   Formatter format(p);
   format("std::size_t total = unknown_fields.total_size();\n");
   std::set<const OneofDescriptor *> oneof_set;
@@ -158,7 +160,7 @@ void MessageGenerator::generate_get_needed_size(
   }
   format("return total;\n");
 }
-void MessageGenerator::generate_serialize_to(google::protobuf::io::Printer *p) {
+void MessageGenerator::generate_serialize_to(google::protobuf::io2::Printer *p) {
   Formatter format(p);
   format("std::size_t pos = 0;\n");
   std::vector<const FieldDescriptor *> fs;
@@ -181,7 +183,7 @@ void MessageGenerator::generate_serialize_to(google::protobuf::io::Printer *p) {
   format("unknown_fields.serialize_to(data, pos, size);\n");
 }
 void MessageGenerator::generate_deserialize_to(
-    google::protobuf::io::Printer *p) {
+    google::protobuf::io2::Printer *p) {
   Formatter format(p);
   format("std::size_t pos = 0;\n");
   format("bool ok = false;\n");
@@ -212,7 +214,7 @@ switch(tag) {
   format("}\n");
 }
 
-void MessageGenerator::generate_to_string_to(google::protobuf::io::Printer *p) {
+void MessageGenerator::generate_to_string_to(google::protobuf::io2::Printer *p) {
   Formatter format(p);
   std::vector<const FieldDescriptor *> fs;
   fs.reserve(d_->field_count());
@@ -227,7 +229,7 @@ void MessageGenerator::generate_to_string_to(google::protobuf::io::Printer *p) {
   format("std::stringstream ss;\n");
   format.outdent();
 
-  if (!d_->options().GetExtension(eigen_typen_name).empty()) {
+  if (!d_->options().GetExtension(eigen_type_name).empty()) {
       format.indent();
       format("ss << t << std::endl;\n");
       format.outdent();
