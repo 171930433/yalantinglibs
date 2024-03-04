@@ -11,8 +11,10 @@ if (Protobuf_FOUND)
     # generate .pb.cc .pb.h
     protobuf_generate_cpp(PROTO_SRCS
     PROTO_HDRS
-    addressbook.proto
+    # addressbook.proto
     proto_to_struct.proto
+    base.proto
+    imu.proto
     )
     add_executable(struct_pb_tutorial tutorial.cpp           
       ${PROTO_SRCS}
@@ -24,7 +26,10 @@ if (Protobuf_FOUND)
       ${CMAKE_CURRENT_LIST_DIR}
       )
 
-    target_protos_struct_pb(struct_pb_tutorial PRIVATE addressbook.proto 
-    OPTION "namespace=innerstruct")
+    target_protos_struct_pb(struct_pb_tutorial PRIVATE 
+    # addressbook.proto  
+    base.proto
+    imu.proto
+    OPTION "namespace=inner_struct")
 
 endif()

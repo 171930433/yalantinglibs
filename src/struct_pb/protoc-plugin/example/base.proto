@@ -1,0 +1,119 @@
+syntax = "proto3";
+package inner_class;
+
+import "proto_to_struct.proto";
+
+enum  ZFrameType{
+     None = 0;
+     VEHICLE_MODEL = 1;  // 车辆运动约束虚拟帧
+     // 虚拟帧
+     IMU = 5;           // IMU
+     CHASSIS_INFO = 6;  // 车轮里程计
+     GNSS_POS = 7;      // GNSS 观测值
+     GNSS_VEL = 8;      // GNSS 观测值
+     GNSS_ALL = 9;      // GNSS 观测值[vel pos dual_antenna]
+     //
+     CGI610 = 10;
+     Cpt7 = 11;
+     STATE = 15;
+     //
+     TRAJECTORY = 16;
+     ODOMETRY = 17;
+     //
+     PERCEPTION = 20;
+     SEMANTIC_MAP = 21;
+     LINESEGMENT = 25;
+     POLE = 26;
+     SIGN = 27;
+     SEMANTIC_MATCH = 40;
+     ZSemanticMatchDebugInfo = 41;
+     // LIDAR
+     PointCloud = 50;
+     LIDAR_MATCH = 51;            // 激光匹配结果
+     PointCloudMapFileInfo = 52;  // 地图文件信息
+     LIDAR_FRAME_MATCH = 55;      // 激光匹配结果
+     LIDAR_MAP_MATCH = 56;        // 激光匹配结果
+     // zloc_view
+     Zloc_Map_Msg = 60;                 // zloc_view 显示zlocmap_msg地图使用
+     Zmap_Map_Msg = 61;                 // zloc_view 显示zmap_msg地图使用
+     Localization_Msg = 62;             // zloc_view 显示 localization/pose地图使用
+     CompressImage = 63;                // zloc_view 显示图像使用
+     PerceptionLane = 64;               // zloc_view 显示感知车道线使用
+     OrdinaryImage = 65;                // zloc_view 显示图像使用
+     SourceCompressed_ColorImage = 66;  // 用于建图的原始压缩彩色图像
+     SourceColorImage = 67;             // 用于建图的原始彩色图像
+     SourceCompressed_GreyImage = 68;   // 用于建图的原始压缩灰色图像
+     SourceGreyImage = 69;              // 用于建图的原始灰色图像
+     PointCloud_LOCALMAP = 70;          // 局部点云地图
+     PointCloud_GLOBALMAP = 71;         // 全局点云地图
+     PointCloud_INIMAGE = 72;           // 投影到图像上的点云
+     ODOMETRY_DELTA = 73;               // 里程计增量信息
+     CvImage = 74;                      // 解码后的opencv图像格式
+     // 整点输出标志
+     FUSE_STATE_EPOCH = 127;  // 整点输出标志
+}
+
+message Header
+{
+     double t0 = 1;
+     double t1 = 2;
+     double t2 = 3;
+     ZFrameType type = 4;
+     string channel_name = 5;
+}
+
+message Point4D
+{
+    option(eigen_typename) = "Eigen::Vector4d";
+
+     double x = 1;
+     double y = 2;
+     double z = 3;
+     double i = 4;
+}
+
+message Point3D
+{
+    option(eigen_typename) = "Eigen::Vector3d";
+
+     double x = 1;
+     double y = 2;
+     double z = 3;
+}
+
+message Point2D
+{
+    option(eigen_typename) = "Eigen::Vector2d";
+
+     double x = 1;
+     double y = 2;
+}
+
+message Quaternion {
+    option(eigen_typename) = "Eigen::Quaterniond";
+
+     double w = 1;
+     double x = 2;
+     double y = 3;
+     double z = 4;
+}
+
+message PointLLH {
+     double lon = 1;
+     double lat = 2;
+     double height = 3;
+}
+
+message Matrix
+{
+    option(eigen_typename) = "Eigen::MatrixXd";
+
+    repeated double data = 1;
+    int32 col = 2;
+    int32 row = 3;
+}
+message PointENU {
+     double x = 1 ;  
+     double y = 2 ;  
+     double z = 3 ;  
+}               

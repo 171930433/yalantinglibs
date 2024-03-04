@@ -60,14 +60,18 @@ void protobuf_AddDesc_proto_5fto_5fstruct_2eproto() {
   ::google::protobuf::protobuf_AddDesc_google_2fprotobuf_2fdescriptor_2eproto();
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\025proto_to_struct.proto\032 google/protobuf"
-    "/descriptor.proto::\n\017eigen_type_name\022\037.g"
-    "oogle.protobuf.MessageOptions\030\241\234\001 \001(\tb\006p"
-    "roto3", 125);
+    "/descriptor.proto:9\n\016eigen_typename\022\037.go"
+    "ogle.protobuf.MessageOptions\030\241\234\001 \001(\t::\n\017"
+    "parent_typename\022\037.google.protobuf.Messag"
+    "eOptions\030\242\234\001 \001(\tb\006proto3", 184);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "proto_to_struct.proto", &protobuf_RegisterTypes);
   ::google::protobuf::internal::ExtensionSet::RegisterExtension(
     &::google::protobuf::MessageOptions::default_instance(),
     20001, 9, false, false);
+  ::google::protobuf::internal::ExtensionSet::RegisterExtension(
+    &::google::protobuf::MessageOptions::default_instance(),
+    20002, 9, false, false);
   ::google::protobuf::internal::OnShutdown(&protobuf_ShutdownFile_proto_5fto_5fstruct_2eproto);
 }
 
@@ -77,10 +81,14 @@ struct StaticDescriptorInitializer_proto_5fto_5fstruct_2eproto {
     protobuf_AddDesc_proto_5fto_5fstruct_2eproto();
   }
 } static_descriptor_initializer_proto_5fto_5fstruct_2eproto_;
-const ::std::string eigen_type_name_default("");
+const ::std::string eigen_typename_default("");
 ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::MessageOptions,
     ::google::protobuf::internal::StringTypeTraits, 9, false >
-  eigen_type_name(kEigenTypeNameFieldNumber, eigen_type_name_default);
+  eigen_typename(kEigenTypenameFieldNumber, eigen_typename_default);
+const ::std::string parent_typename_default("");
+::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::MessageOptions,
+    ::google::protobuf::internal::StringTypeTraits, 9, false >
+  parent_typename(kParentTypenameFieldNumber, parent_typename_default);
 
 // @@protoc_insertion_point(namespace_scope)
 

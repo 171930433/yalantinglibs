@@ -69,7 +69,8 @@ void FileGenerator::generate_header(google::protobuf::io2::Printer *p) {
 #include <eigen3/Eigen/Dense>
 
 #include "nlohmann/json.hpp"
-
+#include "iguana/json_reader.hpp"
+#include "iguana/json_writer.hpp"
 )");
 
   generate_dependency_includes(p);  // 包含的其他头文件
@@ -85,12 +86,12 @@ void FileGenerator::generate_fwd_decls(google::protobuf::io2::Printer *p) {
   Formatter format(p);
   for (int i = 0; i < file_->message_type_count(); ++i) {
     auto m = file_->message_type(i);
-    auto eigen_typename = m->options().GetExtension(eigen_type_name);
-    if (eigen_typename.empty()) {
+    auto eigen_name = m->options().GetExtension(eigen_typename);
+    if (eigen_name.empty()) {
       format("struct $1$;\n", resolve_keyword(m->name()));
     }
     else {
-      format("using $1$ = $2$;\n", resolve_keyword(m->name()), eigen_typename);
+      format("using $1$ = $2$;\n", resolve_keyword(m->name()), eigen_name);
     }
     std::cerr << " i= " << i << ", name = " << m->name() << "\n";
   }
@@ -229,10 +230,18 @@ void FileGenerator::generate_message_tostring_func_definitions(
 
   
   for (auto msg : msgs) {
+    if(is_eigen_type(msg)) {continue;}
+
+    auto raw_name = msg->name();
     auto name = qualified_class_name(msg, options_);
     format("// $1$\n", name);
-    format("void to_json(nlohmann::json& j, $1$ const& t);\n", name);
-    format("\n");
+    // format("void to_json(nlohmann::json& j, $1$ const& t);\n", name);
+    format("REFLECTION($1$", raw_name);
+    for(int i = 0; i < msg->field_count();++i)
+    {
+      format(", $1$", msg->field(i)->name());
+    }
+    format(");\n");
   }
 
   // enum

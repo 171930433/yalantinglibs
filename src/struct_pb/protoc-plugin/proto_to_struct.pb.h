@@ -39,10 +39,14 @@ void protobuf_ShutdownFile_proto_5fto_5fstruct_2eproto();
 
 // ===================================================================
 
-static const int kEigenTypeNameFieldNumber = 20001;
+static const int kEigenTypenameFieldNumber = 20001;
 extern ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::MessageOptions,
     ::google::protobuf::internal::StringTypeTraits, 9, false >
-  eigen_type_name;
+  eigen_typename;
+static const int kParentTypenameFieldNumber = 20002;
+extern ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::MessageOptions,
+    ::google::protobuf::internal::StringTypeTraits, 9, false >
+  parent_typename;
 
 // ===================================================================
 

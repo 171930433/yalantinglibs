@@ -4,6 +4,7 @@ import "google/protobuf/descriptor.proto";
 
 extend google.protobuf.MessageOptions {
   // 当前message是否解析
-  string eigen_type_name = 20001;
+  string eigen_typename = 20001;
+  string parent_typename = 20002;
 }
 

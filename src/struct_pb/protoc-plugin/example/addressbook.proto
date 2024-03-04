@@ -13,7 +13,7 @@ enum MyType {
 
 message PointXYZ
 {
-  option(eigen_type_name) = "Eigen::Vector3d";
+  option(eigen_typename) = "Eigen::Vector3d";
 
   double x = 1;
   double y = 2;

@@ -52,12 +52,17 @@ void MessageGenerator::generate_struct_definition(
   //  auto v = p->WithVars(ClassVars(d_, options_));
 
   // added 跳过eigen类型的定义
-  if (!d_->options().GetExtension(eigen_type_name).empty()) {
+  if (!d_->options().GetExtension(eigen_typename).empty()) {
     return;
   }
 
+  std::string parent = "";
+  if (std::string name = d_->options().GetExtension(parent_typename); !name.empty()) {
+    parent = ": public " + name;
+  }
+
   Formatter format(p);
-  format("struct $1$ {\n", resolve_keyword(d_->name()));
+  format("struct $1$ $2$ {\n", resolve_keyword(d_->name()), parent);
   format.indent();
   for (int i = 0; i < d_->enum_type_count(); ++i) {
     auto e = d_->enum_type(i);
@@ -226,7 +231,7 @@ void MessageGenerator::generate_to_string_to(google::protobuf::io2::Printer *p) 
               return lhs->number() < rhs->number();
             });
   
-  if (!d_->options().GetExtension(eigen_type_name).empty()) {
+  if (!d_->options().GetExtension(eigen_typename).empty()) {
       format.indent();
       format("// need edit;\n");
       format.outdent();

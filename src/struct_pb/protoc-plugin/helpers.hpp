@@ -225,6 +225,13 @@ inline std::string enum_name(
   ret += resolve_keyword(descriptor->name());
   return resolve_keyword(ret);
 }
+
+// added
+inline bool is_eigen_type(const google::protobuf::Descriptor *d)
+{
+  return !d->options().GetExtension(eigen_typename).empty();
+}
+
 // https://stackoverflow.com/questions/2896600/how-to-replace-all-occurrences-of-a-character-in-string
 inline std::string ReplaceAll(std::string str, const std::string &from,
                               const std::string &to) {
@@ -252,7 +259,8 @@ inline std::string get_namespace(const google::protobuf::FileDescriptor *file,
     return get_namespace(options.ns);
   }
   else {
-    return get_namespace(file->package());
+    return get_namespace(options.ns);
+    // return get_namespace(file->package());
   }
 }
 

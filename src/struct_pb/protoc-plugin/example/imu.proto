@@ -1,0 +1,15 @@
+syntax = "proto3";
+package inner_class;
+
+import "base.proto";
+import "proto_to_struct.proto";
+
+
+message ZImu
+{
+    option(parent_typename) = "Header";
+    // Header frame = 1;
+    Point3D acc = 2;                    // 加速度 g
+    Point3D gyr = 3;                    // 角速度 rad/s
+    double temper = 4;                             // 温度 ℃
+}
