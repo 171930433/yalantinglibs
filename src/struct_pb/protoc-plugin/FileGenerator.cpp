@@ -249,7 +249,7 @@ void FileGenerator::generate_message_tostring_func_definitions(
   for (auto single_enum : enums) {
     auto name = qualified_enum_name(single_enum, options_);
     format("// $1$\n", name);
-    format("void to_json(nlohmann::json& j, $1$ const& t);\n", name);
+    format("extern std::map<$1$, std::string> k$2$_EnumToString;", name, resolve_keyword(single_enum->name()));
     format("\n");
   }
 
@@ -274,10 +274,20 @@ void FileGenerator::generate_message_tostring_func_source(
     auto name = qualified_enum_name(single_enum, options_);
     EnumGenerator g(single_enum, options_);
     format("// $1$\n", name);
-    format("void to_json(nlohmann::json& j, $1$ const& t) { // $1$ \n", name);
-    g.generateMapDefinition(p);
-    format("}\n");
-    
+    // 枚举字符串
+    // auto name = qualified_enum_name(d_, options_);
+    format.indent();
+    format("std::map<$1$, std::string> k$1$_EnumToString = { \n", single_enum->name());
+    for (int i = 0; i < single_enum->value_count(); ++i) {
+      auto value = resolve_keyword(single_enum->value(i)->name());
+      auto number = single_enum->value(i)->number();
+      auto enum_value = name + "::" + value;
+      format.indent();
+      format("{$1$ , \"$2$\"},\n", enum_value, value);
+      format.outdent();
+    }
+    format("};\n");
+    format.outdent();    
   }
 
 }

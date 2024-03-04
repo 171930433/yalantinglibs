@@ -44,26 +44,6 @@ void EnumGenerator::generateMapDeclaration(google::protobuf::io2::Printer *p)
 
 void EnumGenerator::generateMapDefinition(google::protobuf::io2::Printer *p)
 {
-  Formatter format(p);
-  // 定义静态的map
-  auto name = qualified_enum_name(d_, options_);
-  format.indent();
-  format("static std::map<$1$, std::string> k$2$_EnumToString = { \n", name, resolve_keyword(d_->name()));
-  for (int i = 0; i < d_->value_count(); ++i) {
-    auto value = resolve_keyword(d_->value(i)->name());
-    auto number = d_->value(i)->number();
-    auto enum_value = name + "::" + value;
-    format.indent();
-    format("{$1$ , \"$2$\"},\n", enum_value, value);
-    format.outdent();
-  }
-  format("};\n");
-  format.outdent();
-  // tostring
-  format.indent();
-  format("j = k$1$_EnumToString[t];\n", resolve_keyword(d_->name()));
-  format.outdent();
-
   
 }
 
