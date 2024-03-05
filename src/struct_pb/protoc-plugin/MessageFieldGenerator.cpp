@@ -151,27 +151,38 @@ void MessageFieldGenerator::generate_struct_to_class(
   Formatter format(p);
 
   // std::cerr << "cpp_type_name" << cpp_type_name() <<"\n";
-  
+
   if (!d_->options().GetExtension(inherits_from)) {
-    format("*result.mutable_$1$() = InnerStructToInnerClass(in.$1$);\n", name());
+    format("*result.mutable_$1$() = InnerStructToInnerClass(in.$1$);\n",
+           name());
   }
   else {
-    format("*result.mutable_$1$() = InnerStructToInnerClass(($2$ const&)in);\n", name(), cpp_type_name());
+    format("*result.mutable_$1$() = InnerStructToInnerClass(($2$ const&)in);\n",
+           name(), cpp_type_name());
   }
 }
 
 // added
-void RepeatedMessageFieldGenerator::generate_struct_to_class(
+void MessageFieldGenerator::generate_class_to_struct(
     google::protobuf::io2::Printer *p) const {
   Formatter format(p);
 
   if (!d_->options().GetExtension(inherits_from)) {
-    format("*result.mutable_$1$() = InnerStructToInnerClass(in.$1$);\n", name());
+    format("result.$1$ = InnerClassToInnerStruct(in.$1$());\n", name());
   }
   else {
-    format("*result.mutable_$1$() = InnerStructToInnerClass(($2$ const&)in);\n", name(), cpp_type_name());
+    format("($1$&)result = InnerClassToInnerStruct(in.$2$());\n",
+           cpp_type_name(), name());
   }
 }
+
+void RepeatedMessageFieldGenerator::generate_struct_to_class(
+    google::protobuf::io2::Printer *p) const {}
+
+void RepeatedMessageFieldGenerator::generate_class_to_struct(
+    google::protobuf::io2::Printer *p) const {
+
+    }
 
 }  // namespace compiler
 }  // namespace struct_pb

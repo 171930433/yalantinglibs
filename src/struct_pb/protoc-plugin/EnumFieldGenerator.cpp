@@ -334,8 +334,16 @@ void EnumFieldGenerator::generate_struct_to_class(
   std::string class_name = d_->file()->package() + "::" + d_->enum_type()->name();
 
   format("result.set_$1$($2$(int(in.$1$)));\n", name(), class_name);
+}
 
+void EnumFieldGenerator::generate_class_to_struct(
+    google::protobuf::io2::Printer *p) const {
+  Formatter format(p);
+  // p->Print({{"name", d_->name()}}, "j[\"$name$\"] = t.$name$;\n");
 
+  std::string raw_name = d_->name();
+
+  format("result.$1$ = $2$(int(in.$1$()));\n", name() , cpp_type_name());
 }
 
 }  // namespace compiler

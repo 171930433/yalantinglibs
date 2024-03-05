@@ -68,7 +68,6 @@ void FileGenerator::generate_header(google::protobuf::io2::Printer *p) {
 #include <vector>
 #include <eigen3/Eigen/Dense>
 
-#include "nlohmann/json.hpp"
 #include "iguana/json_reader.hpp"
 #include "iguana/json_writer.hpp"
 )");
@@ -116,6 +115,7 @@ void FileGenerator::generate_source(google::protobuf::io2::Printer *p) {
 
   // generate_message_tostring_func_source(p);
   generate_message_struct2class_source(p);
+  generate_message_class2struct_source(p);
 
   generate_ns_close(p);  // 关闭命名空间
 
@@ -302,6 +302,7 @@ void FileGenerator::generate_message_struct2class_definitions(
     auto struct_name = qualified_class_name(msg, options_);
     auto class_name = file_->package() + "::" + msg->name();
     format("$1$ InnerStructToInnerClass($2$ const& in);\n",class_name,struct_name);
+    format("$1$ InnerClassToInnerStruct($2$ const& in);\n\n",struct_name, class_name);
   }
 }
 
@@ -317,6 +318,24 @@ void FileGenerator::generate_message_struct2class_source(
     format.indent();
     format("$1$ result;\n",class_name);
     g.generate_struct_to_class_to(p);
+    format("\nreturn result;\n");
+    format.outdent();
+    format("}\n");
+  }
+}
+
+void FileGenerator::generate_message_class2struct_source(
+    google::protobuf::io2::Printer *p) {
+  std::vector<const Descriptor *> msgs = flatten_messages_in_file(file_);
+  Formatter format(p);
+  for (auto msg : msgs) {
+    MessageGenerator g(msg, options_);
+    auto struct_name = qualified_class_name(msg, options_);
+    auto class_name = file_->package() + "::" + msg->name();
+    format("$1$ InnerClassToInnerStruct($2$ const& in) {\n",struct_name, class_name);
+    format.indent();
+    format("$1$ result;\n",struct_name);
+    g.generate_class_to_struct_to(p);
     format("\nreturn result;\n");
     format.outdent();
     format("}\n");

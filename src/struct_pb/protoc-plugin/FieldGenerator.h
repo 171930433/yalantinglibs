@@ -40,6 +40,7 @@ class FieldGenerator : public GeneratorBase {
 
   // added
   virtual void generate_struct_to_class(google::protobuf::io2::Printer *p) const;
+  virtual void generate_class_to_struct(google::protobuf::io2::Printer *p) const;
 
  protected:
   std::string get_type_name() const;

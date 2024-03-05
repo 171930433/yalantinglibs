@@ -278,5 +278,56 @@ void MessageGenerator::generate_struct_to_class_to(google::protobuf::io2::Printe
   }
 }
 
+void MessageGenerator::generate_class_to_struct_to(google::protobuf::io2::Printer *p) {
+  Formatter format(p);
+  std::vector<const FieldDescriptor *> fs;
+  fs.reserve(d_->field_count());
+  for (int i = 0; i < d_->field_count(); ++i) {
+    fs.push_back(d_->field(i));
+  }
+  std::sort(fs.begin(), fs.end(),
+            [](const FieldDescriptor *lhs, const FieldDescriptor *rhs) {
+              return lhs->number() < rhs->number();
+            });
+
+  if (std::string eigen_name = d_->options().GetExtension(eigen_typename);
+      !eigen_name.empty()) {
+    if (eigen_name == "Eigen::MatrixXd") {
+      format("result = Eigen::Map<Eigen::MatrixXd const>(in.data().begin(), in.row(),in.col());\n");
+    }
+    else if (eigen_name == "Eigen::Vector3d" ||
+             eigen_name == "Eigen::Vector2d" ||
+             eigen_name == "Eigen::Vector4d") {
+      for (int i = 0; i < d_->field_count(); ++i) {
+        auto f = d_->field(i);
+        format.indent();
+        format("result[$1$] = in.$2$();\n", std::to_string(i), f->name());
+        format.outdent();
+      }
+    }
+    else if (eigen_name == "Eigen::Quaterniond") {
+      for (int i = 0; i < d_->field_count(); ++i) {
+        auto f = d_->field(i);
+        format.indent();
+        format("result.$1$() = in.$1$();\n", f->name());
+        format.outdent();
+      }
+    }
+    else {
+      std::cerr <<" not suppot " << eigen_name <<" . exit\n";
+      exit(0);
+    }
+  }
+  else {
+    for (int i = 0; i < d_->field_count(); ++i) {
+      auto f = fs[i];
+      format.indent();
+      fg_map_.get(f).generate_class_to_struct(p);
+      format.outdent();
+    }
+  }
+}
+
+
 }  // namespace compiler
 }  // namespace struct_pb

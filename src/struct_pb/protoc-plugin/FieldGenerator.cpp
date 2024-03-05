@@ -564,5 +564,14 @@ void FieldGenerator::generate_struct_to_class(
 
 }
 
+void FieldGenerator::generate_class_to_struct(
+    google::protobuf::io2::Printer *p) const {
+  Formatter format(p);
+
+  // format("j[\"$1$\"] = t.$1$;\n", name());
+  format("result.$1$ = in.$1$();\n", name());
+
+}
+
 }  // namespace compiler
 }  // namespace struct_pb
