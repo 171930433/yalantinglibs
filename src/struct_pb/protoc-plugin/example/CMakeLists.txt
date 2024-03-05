@@ -14,7 +14,7 @@ if (Protobuf_FOUND)
     # addressbook.proto
     proto_to_struct.proto
     base.proto
-    # imu.proto
+    imu.proto
     )
     add_executable(struct_pb_tutorial tutorial.cpp           
       ${PROTO_SRCS}
@@ -29,7 +29,7 @@ if (Protobuf_FOUND)
     target_protos_struct_pb(struct_pb_tutorial PRIVATE 
     # addressbook.proto  
     base.proto
-    # imu.proto
+    imu.proto
     OPTION "namespace=inner_struct")
 
 endif()

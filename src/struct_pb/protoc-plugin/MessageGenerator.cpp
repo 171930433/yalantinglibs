@@ -58,8 +58,11 @@ void MessageGenerator::generate_struct_definition(
   }
 
   std::string parent = "";
-  if (std::string name = d_->options().GetExtension(parent_typename); !name.empty()) {
-    parent = ": public " + name;
+  for (int i = 0; i < d_->field_count(); ++i) {
+    auto fd = d_->field(i);
+    if (fd->options().GetExtension(inherits_from)) {
+      parent = std::string(": public ") + fg_map_.get(fd).cpp_type_name();
+    }
   }
 
   Formatter format(p);
@@ -125,7 +128,10 @@ void MessageGenerator::generate_struct_definition(
       }
     }
     else {
-      fg_map_.get(f).generate_definition(p);
+      // 如果不是继承于
+      if (!f->options().GetExtension(inherits_from)) {
+        fg_map_.get(f).generate_definition(p);
+      }
     }
   }
   if (options_.generate_eq_op) {

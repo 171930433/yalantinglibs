@@ -61,17 +61,17 @@ void protobuf_AddDesc_proto_5fto_5fstruct_2eproto() {
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\025proto_to_struct.proto\032 google/protobuf"
     "/descriptor.proto:9\n\016eigen_typename\022\037.go"
-    "ogle.protobuf.MessageOptions\030\241\234\001 \001(\t::\n\017"
-    "parent_typename\022\037.google.protobuf.Messag"
-    "eOptions\030\242\234\001 \001(\tb\006proto3", 184);
+    "ogle.protobuf.MessageOptions\030\241\234\001 \001(\t:6\n\r"
+    "inherits_from\022\035.google.protobuf.FieldOpt"
+    "ions\030\242\234\001 \001(\010b\006proto3", 180);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "proto_to_struct.proto", &protobuf_RegisterTypes);
   ::google::protobuf::internal::ExtensionSet::RegisterExtension(
     &::google::protobuf::MessageOptions::default_instance(),
     20001, 9, false, false);
   ::google::protobuf::internal::ExtensionSet::RegisterExtension(
-    &::google::protobuf::MessageOptions::default_instance(),
-    20002, 9, false, false);
+    &::google::protobuf::FieldOptions::default_instance(),
+    20002, 8, false, false);
   ::google::protobuf::internal::OnShutdown(&protobuf_ShutdownFile_proto_5fto_5fstruct_2eproto);
 }
 
@@ -85,10 +85,9 @@ const ::std::string eigen_typename_default("");
 ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::MessageOptions,
     ::google::protobuf::internal::StringTypeTraits, 9, false >
   eigen_typename(kEigenTypenameFieldNumber, eigen_typename_default);
-const ::std::string parent_typename_default("");
-::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::MessageOptions,
-    ::google::protobuf::internal::StringTypeTraits, 9, false >
-  parent_typename(kParentTypenameFieldNumber, parent_typename_default);
+::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::FieldOptions,
+    ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false >
+  inherits_from(kInheritsFromFieldNumber, false);
 
 // @@protoc_insertion_point(namespace_scope)
 
