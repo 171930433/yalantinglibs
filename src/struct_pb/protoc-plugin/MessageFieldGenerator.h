@@ -17,7 +17,7 @@ class MessageFieldGenerator : public FieldGenerator {
   std::string cpp_type_name() const override;
 
   // added
-  void generate_to_string(google::protobuf::io2::Printer *p) const override;
+  void generate_struct_to_class(google::protobuf::io2::Printer *p) const override;
 
 };
 class RepeatedMessageFieldGenerator : public FieldGenerator {
@@ -39,7 +39,7 @@ class RepeatedMessageFieldGenerator : public FieldGenerator {
   std::string cpp_type_name() const override;
 
   // added
-  void generate_to_string(google::protobuf::io2::Printer *p) const override;
+  void generate_struct_to_class(google::protobuf::io2::Printer *p) const override;
 };
 }  // namespace compiler
 }  // namespace struct_pb

@@ -62,6 +62,7 @@ message Header
      string channel_name = 5;
 }
 
+
 message Point4D
 {
     option(eigen_typename) = "Eigen::Vector4d";
@@ -98,12 +99,14 @@ message Quaternion {
      double z = 4;
 }
 
+
 message PointLLH {
      double lon = 1;
      double lat = 2;
      double height = 3;
 }
 
+// hard code, never edit
 message Matrix
 {
     option(eigen_typename) = "Eigen::MatrixXd";

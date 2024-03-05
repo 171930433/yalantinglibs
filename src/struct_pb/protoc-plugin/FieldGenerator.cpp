@@ -555,11 +555,13 @@ const FieldGenerator &FieldGeneratorMap::get(
   return *field_generators_[field->index()];
 }
 
-void FieldGenerator::generate_to_string(
+void FieldGenerator::generate_struct_to_class(
     google::protobuf::io2::Printer *p) const {
   Formatter format(p);
 
-  format("j[\"$1$\"] = t.$1$;\n", name());
+  // format("j[\"$1$\"] = t.$1$;\n", name());
+  format("result.set_$1$(in.$1$);\n", name());
+
 }
 
 }  // namespace compiler

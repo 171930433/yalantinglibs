@@ -35,6 +35,9 @@ class FileGenerator : public GeneratorBase {
 
   void generate_enum_mapper_decls(google::protobuf::io2::Printer *p);
 
+  void generate_message_struct2class_definitions(
+      google::protobuf::io2::Printer *p);
+  void generate_message_struct2class_source(google::protobuf::io2::Printer *p);
 
  private:
   const google::protobuf::FileDescriptor *file_;

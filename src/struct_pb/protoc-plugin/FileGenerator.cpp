@@ -76,7 +76,8 @@ void FileGenerator::generate_header(google::protobuf::io2::Printer *p) {
   generate_dependency_includes(p);  // 包含的其他头文件
   generate_ns_open(p);              // 写命名空间
   generate_shared_header_code(p);
-  generate_message_tostring_func_definitions(p);
+  // generate_message_tostring_func_definitions(p);
+  generate_message_struct2class_definitions(p);
   generate_ns_close(p);  // 关闭命名空间
   // generate_message_struct_pb_func_definitions(p);
   p->Print("// clang-format on\n");
@@ -113,7 +114,9 @@ void FileGenerator::generate_source(google::protobuf::io2::Printer *p) {
   // generate_message_struct_pb_func_source(p);
   generate_ns_open(p);              // 写命名空间
 
-  generate_message_tostring_func_source(p);
+  // generate_message_tostring_func_source(p);
+  generate_message_struct2class_source(p);
+
   generate_ns_close(p);  // 关闭命名空间
 
 }
@@ -235,7 +238,6 @@ void FileGenerator::generate_message_tostring_func_definitions(
     auto raw_name = msg->name();
     auto name = qualified_class_name(msg, options_);
     format("// $1$\n", name);
-    // format("void to_json(nlohmann::json& j, $1$ const& t);\n", name);
     format("REFLECTION($1$", raw_name);
     for(int i = 0; i < msg->field_count();++i)
     {
@@ -264,7 +266,7 @@ void FileGenerator::generate_message_tostring_func_source(
     MessageGenerator g(msg, options_);
     format("// $1$\n", name);
     format("void to_json(nlohmann::json& j, $1$ const& t) { // $1$ \n", name);
-    g.generate_to_string_to(p);
+    g.generate_struct_to_class_to(p);
     format("}\n");
   }
 
@@ -290,6 +292,35 @@ void FileGenerator::generate_message_tostring_func_source(
     format.outdent();    
   }
 
+}
+
+void FileGenerator::generate_message_struct2class_definitions(
+    google::protobuf::io2::Printer *p) {
+  std::vector<const Descriptor *> msgs = flatten_messages_in_file(file_);
+  Formatter format(p);
+  for (auto msg : msgs) {
+    auto struct_name = qualified_class_name(msg, options_);
+    auto class_name = file_->package() + "::" + msg->name();
+    format("$1$ InnerStructToInnerClass($2$ const& in);\n",class_name,struct_name);
+  }
+}
+
+void FileGenerator::generate_message_struct2class_source(
+    google::protobuf::io2::Printer *p) {
+  std::vector<const Descriptor *> msgs = flatten_messages_in_file(file_);
+  Formatter format(p);
+  for (auto msg : msgs) {
+    MessageGenerator g(msg, options_);
+    auto struct_name = qualified_class_name(msg, options_);
+    auto class_name = file_->package() + "::" + msg->name();
+    format("$1$ InnerStructToInnerClass($2$ const& in) {\n",class_name,struct_name);
+    format.indent();
+    format("$1$ result;\n",class_name);
+    g.generate_struct_to_class_to(p);
+    format("\nreturn result;\n");
+    format.outdent();
+    format("}\n");
+  }
 }
 
 }  // namespace compiler

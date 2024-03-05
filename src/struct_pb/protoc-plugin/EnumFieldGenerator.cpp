@@ -325,10 +325,17 @@ void EnumFieldGenerator::generate_calculate_size_only(
            "calculate_varint_size(static_cast<uint64_t>($value$))");
 }
 
-void EnumFieldGenerator::generate_to_string(
+void EnumFieldGenerator::generate_struct_to_class(
     google::protobuf::io2::Printer *p) const {
   Formatter format(p);
-  p->Print({{"name", d_->name()}}, "j[\"$name$\"] = t.$name$;\n");
+  // p->Print({{"name", d_->name()}}, "j[\"$name$\"] = t.$name$;\n");
+
+  std::string raw_name = d_->name();
+  std::string class_name = d_->file()->package() + "::" + d_->enum_type()->name();
+
+  format("result.set_$1$($2$(int(in.$1$)));\n", name(), class_name);
+
+
 }
 
 }  // namespace compiler

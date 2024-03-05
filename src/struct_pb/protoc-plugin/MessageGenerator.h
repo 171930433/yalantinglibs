@@ -19,7 +19,7 @@ class MessageGenerator : public GeneratorBase {
   void generate_serialize_to(google::protobuf::io2::Printer *p);
   void generate_deserialize_to(google::protobuf::io2::Printer *p);
   // added
-  void generate_to_string_to(google::protobuf::io2::Printer *p);
+  void generate_struct_to_class_to(google::protobuf::io2::Printer *p);
 
  private:
   const google::protobuf::Descriptor *d_;

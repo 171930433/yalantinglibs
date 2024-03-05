@@ -4,6 +4,7 @@
 #include "FieldGenerator.h"
 #include "helpers.hpp"
 #include <string_view>
+#include <iostream>
 
 using namespace google::protobuf;
 using namespace google::protobuf::internal;
@@ -219,7 +220,7 @@ switch(tag) {
   format("}\n");
 }
 
-void MessageGenerator::generate_to_string_to(google::protobuf::io2::Printer *p) {
+void MessageGenerator::generate_struct_to_class_to(google::protobuf::io2::Printer *p) {
   Formatter format(p);
   std::vector<const FieldDescriptor *> fs;
   fs.reserve(d_->field_count());
@@ -230,17 +231,42 @@ void MessageGenerator::generate_to_string_to(google::protobuf::io2::Printer *p) 
             [](const FieldDescriptor *lhs, const FieldDescriptor *rhs) {
               return lhs->number() < rhs->number();
             });
-  
-  if (!d_->options().GetExtension(eigen_typename).empty()) {
-      format.indent();
-      format("// need edit;\n");
-      format.outdent();
+
+  if (std::string eigen_name = d_->options().GetExtension(eigen_typename);
+      !eigen_name.empty()) {
+    if (eigen_name == "Eigen::MatrixXd") {
+      format("result.mutable_data()->CopyFrom({in.data(),in.data()+in.size()});""\n");
+      format("result.set_col(in.cols());\n");
+      format("result.set_row(in.rows());\n");
+    }
+    else if (eigen_name == "Eigen::Vector3d" ||
+             eigen_name == "Eigen::Vector2d" ||
+             eigen_name == "Eigen::Vector4d") {
+      for (int i = 0; i < d_->field_count(); ++i) {
+        auto f = d_->field(i);
+        format.indent();
+        format("result.set_$1$(in[$2$]);\n", f->name(), std::to_string(i));
+        format.outdent();
+      }
+    }
+    else if (eigen_name == "Eigen::Quaterniond") {
+      for (int i = 0; i < d_->field_count(); ++i) {
+        auto f = d_->field(i);
+        format.indent();
+        format("result.set_$1$(in.$1$());\n", f->name());
+        format.outdent();
+      }
+    }
+    else {
+      std::cerr <<" not suppot " << eigen_name <<" . exit\n";
+      exit(0);
+    }
   }
   else {
     for (int i = 0; i < d_->field_count(); ++i) {
       auto f = fs[i];
       format.indent();
-      fg_map_.get(f).generate_to_string(p);
+      fg_map_.get(f).generate_struct_to_class(p);
       format.outdent();
     }
   }

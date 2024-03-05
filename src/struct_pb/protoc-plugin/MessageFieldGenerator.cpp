@@ -146,7 +146,7 @@ for(const auto& e: $value$) {
 )");
 }
 
-void MessageFieldGenerator::generate_to_string(
+void MessageFieldGenerator::generate_struct_to_class(
     google::protobuf::io2::Printer *p) const {
   Formatter format(p);
   p->Print({{"name", name()}}, 
@@ -155,7 +155,7 @@ R"(j["$name$"] = t.$name$;
 }
 
 // added
-void RepeatedMessageFieldGenerator::generate_to_string(
+void RepeatedMessageFieldGenerator::generate_struct_to_class(
     google::protobuf::io2::Printer *p) const {
   p->Print({{"name", name()}}, 
 R"(j["$name$"] = t.$name$;
