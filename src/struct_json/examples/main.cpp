@@ -1,8 +1,12 @@
 #include <cassert>
+#include <iguana/json_reader.hpp>
+#include <iguana/json_writer.hpp>
 #include <iostream>
 
 #include "ylt/struct_json/json_reader.h"
 #include "ylt/struct_json/json_writer.h"
+
+void test_user_defined_struct();
 
 struct person {
   std::string name;
@@ -58,6 +62,16 @@ void use_smart_pointer() {
   assert(*p1.age == 42);
 }
 
+void test_escape_serialize() {
+  person p{"老\t人", 20};
+  std::string ss;
+  struct_json::to_json(p, ss);
+  std::cout << ss << std::endl;
+  person p1;
+  struct_json::from_json(p1, ss);
+  assert(p1.name == p.name);
+}
+
 int main() {
   person p{"tom", 20};
   std::string str;
@@ -79,4 +93,6 @@ int main() {
 
   test_inner_object();
   use_smart_pointer();
+  test_escape_serialize();
+  test_user_defined_struct();
 }
