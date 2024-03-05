@@ -67,6 +67,7 @@ void FileGenerator::generate_header(google::protobuf::io2::Printer *p) {
 #include <variant>
 #include <vector>
 #include <eigen3/Eigen/Dense>
+#include <iostream>
 
 #include "iguana/json_reader.hpp"
 #include "iguana/json_writer.hpp"
@@ -114,6 +115,7 @@ void FileGenerator::generate_source(google::protobuf::io2::Printer *p) {
   generate_ns_open(p);              // 写命名空间
 
   // generate_message_tostring_func_source(p);
+  generate_message_tostring_source(p);
   generate_message_struct2class_source(p);
   generate_message_class2struct_source(p);
 
@@ -301,6 +303,7 @@ void FileGenerator::generate_message_struct2class_definitions(
   for (auto msg : msgs) {
     auto struct_name = qualified_class_name(msg, options_);
     auto class_name = file_->package() + "::" + msg->name();
+    format("std::ostream& operator<<(std::ostream& os,$1$ const& in);\n",struct_name);
     format("$1$ InnerStructToInnerClass($2$ const& in);\n",class_name,struct_name);
     format("$1$ InnerClassToInnerStruct($2$ const& in);\n\n",struct_name, class_name);
   }
@@ -337,6 +340,24 @@ void FileGenerator::generate_message_class2struct_source(
     format("$1$ result;\n",struct_name);
     g.generate_class_to_struct_to(p);
     format("\nreturn result;\n");
+    format.outdent();
+    format("}\n");
+  }
+}
+
+void FileGenerator::generate_message_tostring_source(
+    google::protobuf::io2::Printer *p) {
+  std::vector<const Descriptor *> msgs = flatten_messages_in_file(file_);
+  Formatter format(p);
+  for (auto msg : msgs) {
+    MessageGenerator g(msg, options_);
+    auto struct_name = qualified_class_name(msg, options_);
+    auto class_name = file_->package() + "::" + msg->name();
+    format("std::ostream& operator<<(std::ostream& os, $1$ const& in) {\n", struct_name);
+    format.indent();
+    format("std::string result;\n");
+    // g.generate_class_to_struct_to(p);
+    format("\nreturn os;\n");
     format.outdent();
     format("}\n");
   }

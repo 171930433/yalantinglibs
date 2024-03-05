@@ -3,6 +3,7 @@ package inner_class;
 
 import "proto_to_struct.proto";
 
+
 enum  ZFrameType{
      None = 0;
      VEHICLE_MODEL = 1;  // 车辆运动约束虚拟帧
