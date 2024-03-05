@@ -27,17 +27,16 @@ class FileGenerator : public GeneratorBase {
   void generate_ns_close(google::protobuf::io2::Printer *p);
 
   // added
-  void generate_message_tostring_func_definitions(
-      google::protobuf::io2::Printer *p);
+  void generate_message_reflection_definitions(google::protobuf::io2::Printer *p);
 
-  void generate_message_tostring_func_source(
-      google::protobuf::io2::Printer *p);
+  void generate_message_tostring_func_source(google::protobuf::io2::Printer *p);
 
   void generate_enum_mapper_decls(google::protobuf::io2::Printer *p);
 
     // added
-  void generate_message_struct2class_definitions(
-      google::protobuf::io2::Printer *p);
+  void generate_message_struct2class_definitions(google::protobuf::io2::Printer *p);
+  void generate_message_class2struct_definitions(google::protobuf::io2::Printer *p);
+  void generate_message_to_string_definitions(google::protobuf::io2::Printer *p);
   void generate_message_struct2class_source(google::protobuf::io2::Printer *p);
   void generate_message_class2struct_source(google::protobuf::io2::Printer *p);
   void generate_message_tostring_source(google::protobuf::io2::Printer *p);

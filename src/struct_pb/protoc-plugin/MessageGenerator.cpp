@@ -250,17 +250,13 @@ void MessageGenerator::generate_struct_to_class_to(google::protobuf::io2::Printe
              eigen_name == "Eigen::Vector4d") {
       for (int i = 0; i < d_->field_count(); ++i) {
         auto f = d_->field(i);
-        format.indent();
         format("result.set_$1$(in[$2$]);\n", f->name(), std::to_string(i));
-        format.outdent();
       }
     }
     else if (eigen_name == "Eigen::Quaterniond") {
       for (int i = 0; i < d_->field_count(); ++i) {
         auto f = d_->field(i);
-        format.indent();
         format("result.set_$1$(in.$1$());\n", f->name());
-        format.outdent();
       }
     }
     else {
@@ -271,9 +267,7 @@ void MessageGenerator::generate_struct_to_class_to(google::protobuf::io2::Printe
   else {
     for (int i = 0; i < d_->field_count(); ++i) {
       auto f = fs[i];
-      format.indent();
       fg_map_.get(f).generate_struct_to_class(p);
-      format.outdent();
     }
   }
 }
@@ -300,17 +294,13 @@ void MessageGenerator::generate_class_to_struct_to(google::protobuf::io2::Printe
              eigen_name == "Eigen::Vector4d") {
       for (int i = 0; i < d_->field_count(); ++i) {
         auto f = d_->field(i);
-        format.indent();
         format("result[$1$] = in.$2$();\n", std::to_string(i), f->name());
-        format.outdent();
       }
     }
     else if (eigen_name == "Eigen::Quaterniond") {
       for (int i = 0; i < d_->field_count(); ++i) {
         auto f = d_->field(i);
-        format.indent();
         format("result.$1$() = in.$1$();\n", f->name());
-        format.outdent();
       }
     }
     else {
@@ -321,9 +311,7 @@ void MessageGenerator::generate_class_to_struct_to(google::protobuf::io2::Printe
   else {
     for (int i = 0; i < d_->field_count(); ++i) {
       auto f = fs[i];
-      format.indent();
       fg_map_.get(f).generate_class_to_struct(p);
-      format.outdent();
     }
   }
 }

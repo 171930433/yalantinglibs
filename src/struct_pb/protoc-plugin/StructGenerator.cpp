@@ -25,6 +25,9 @@ bool StructGenerator::Generate(
     else if (key == "namespace") {
       struct_pb_options.ns = value;
     }
+    else if (key == "converter_namespace") {
+      struct_pb_options.converter_namespace = value;
+    }
     else {
       *error = "Unknown generator option: " + key;
       return false;

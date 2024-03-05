@@ -3,7 +3,6 @@ package inner_class;
 
 import "proto_to_struct.proto";
 
-
 option(write_eigen_helper) = true;
 
 enum  ZFrameType{
@@ -101,7 +100,6 @@ message Quaternion {
      double y = 3;
      double z = 4;
 }
-
 
 message PointLLH {
      double lon = 1;

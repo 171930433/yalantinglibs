@@ -30,6 +30,6 @@ if (Protobuf_FOUND)
     # addressbook.proto  
     base.proto
     imu.proto
-    OPTION "namespace=inner_struct")
+    OPTION "namespace=inner_struct,converter_namespace=converter")
 
 endif()

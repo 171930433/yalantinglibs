@@ -11,5 +11,6 @@ struct Options {
   Options(const google::protobuf::FileDescriptor* f) : f(f) {}
   bool generate_eq_op = false;
   std::string ns;
+  std::string converter_namespace = "";
   const google::protobuf::FileDescriptor* f;
 };

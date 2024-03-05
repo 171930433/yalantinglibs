@@ -153,11 +153,11 @@ void MessageFieldGenerator::generate_struct_to_class(
   // std::cerr << "cpp_type_name" << cpp_type_name() <<"\n";
 
   if (!d_->options().GetExtension(inherits_from)) {
-    format("*result.mutable_$1$() = InnerStructToInnerClass(in.$1$);\n",
+    format("*result.mutable_$1$() = StructToClass(in.$1$);\n",
            name());
   }
   else {
-    format("*result.mutable_$1$() = InnerStructToInnerClass(($2$ const&)in);\n",
+    format("*result.mutable_$1$() = StructToClass(($2$ const&)in);\n",
            name(), cpp_type_name());
   }
 }
@@ -168,10 +168,10 @@ void MessageFieldGenerator::generate_class_to_struct(
   Formatter format(p);
 
   if (!d_->options().GetExtension(inherits_from)) {
-    format("result.$1$ = InnerClassToInnerStruct(in.$1$());\n", name());
+    format("result.$1$ = ClassToStruct(in.$1$());\n", name());
   }
   else {
-    format("($1$&)result = InnerClassToInnerStruct(in.$2$());\n",
+    format("($1$&)result = ClassToStruct(in.$2$());\n",
            cpp_type_name(), name());
   }
 }
