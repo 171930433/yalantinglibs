@@ -4,12 +4,11 @@ package inner_class;
 import "base.proto";
 import "proto_to_struct.proto";
 
-
-
 message ZImu
 {
-    Header header = 1 [(inherits_from) = true];
+    ZFrame header = 1 [(inherits_from) = true];
     Point3D acc = 2;                    // 加速度 g
     Point3D gyr = 3;                    // 角速度 rad/s
     double temper = 4;                  // 温度 ℃
+    Quaternion qua = 5;
 }

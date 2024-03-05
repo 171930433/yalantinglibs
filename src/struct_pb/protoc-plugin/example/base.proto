@@ -4,6 +4,8 @@ package inner_class;
 import "proto_to_struct.proto";
 
 
+option(write_eigen_helper) = true;
+
 enum  ZFrameType{
      None = 0;
      VEHICLE_MODEL = 1;  // 车辆运动约束虚拟帧
@@ -54,7 +56,7 @@ enum  ZFrameType{
      FUSE_STATE_EPOCH = 127;  // 整点输出标志
 }
 
-message Header
+message ZFrame
 {
      double t0 = 1;
      double t1 = 2;

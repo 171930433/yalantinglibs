@@ -2,6 +2,11 @@ syntax = "proto3";
 
 import "google/protobuf/descriptor.proto";
 
+extend google.protobuf.FileOptions {
+  // 当前message是否解析
+  bool write_eigen_helper = 20000;
+}
+
 extend google.protobuf.MessageOptions {
   // 当前message是否解析
   string eigen_typename = 20001;

@@ -39,6 +39,10 @@ void protobuf_ShutdownFile_proto_5fto_5fstruct_2eproto();
 
 // ===================================================================
 
+static const int kWriteEigenHelperFieldNumber = 20000;
+extern ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::FileOptions,
+    ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false >
+  write_eigen_helper;
 static const int kEigenTypenameFieldNumber = 20001;
 extern ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::MessageOptions,
     ::google::protobuf::internal::StringTypeTraits, 9, false >
