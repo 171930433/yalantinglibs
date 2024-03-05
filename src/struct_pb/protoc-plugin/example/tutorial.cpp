@@ -4,24 +4,23 @@
 #include <string>
 
 // #include "addressbook.struct_pb.h"
-// #include "ylt/struct_json/json_reader.h"
-// #include "ylt/struct_json/json_writer.h"
-
+#include "imu.struct_pb.h"
 // protobuf
 #include <google/protobuf/util/json_util.h>
 
-// #include "addressbook.pb.h"
-// namespace tutorial = MyInner;
 
-namespace iguana {
+namespace Eigen
+{
+template <bool Is_writing_escape, typename Stream>
+inline void to_json_impl(Stream& s, const Eigen::Vector3d& t) {
+  iguana::to_json<Is_writing_escape>(*(double(*)[3]) & t, s);
+}
 
-// template <>
-// struct enum_value<MyInner::PhoneNumber::PhoneType> {
-//   constexpr static std::array<int, 3> value = {0, 1, 2};
-// };
-
-}  // namespace iguana
-
+template <typename It>
+IGUANA_INLINE void from_json_impl(Eigen::Vector3d& value, It&& it, It&& end) {
+  iguana::from_json(*(double(*)[3]) & value, it, end);
+}
+}
 
 int main() {
   //   // MyInner::AddressBook address_book1;
@@ -59,9 +58,28 @@ int main() {
   //   // std::cout << "address_book3 is " << str3 << "\n";
 
 
+  inner_struct::ZImu imu1{1,2,3,inner_struct::ZFrameType::IMU,"channel_name", {4,5,6,}, {7,8,9}, 10};
+  inner_class::ZImu imu2 = inner_struct::InnerStructToInnerClass(imu1);
+
+  std::cout << imu2.DebugString() << std::endl;
+
+  std::string str;
+  iguana::to_json(imu1, str);
+
+  std::cout << str << std::endl;
 
 
-    std::cout << "Done!!!" << std::endl;
+  inner_struct::ZImu imu3;
+  iguana::from_json(imu3, str);
+
+  std::string str3;
+  iguana::to_json(imu3, str3);
+  std::cout << str << std::endl;
+
+
+
+
+  std::cout << "Done!!!" << std::endl;
 
   return 0;
 }

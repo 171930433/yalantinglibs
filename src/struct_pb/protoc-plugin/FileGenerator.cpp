@@ -76,7 +76,7 @@ void FileGenerator::generate_header(google::protobuf::io2::Printer *p) {
   generate_dependency_includes(p);  // 包含的其他头文件
   generate_ns_open(p);              // 写命名空间
   generate_shared_header_code(p);
-  // generate_message_tostring_func_definitions(p);
+  generate_message_tostring_func_definitions(p);
   generate_message_struct2class_definitions(p);
   generate_ns_close(p);  // 关闭命名空间
   // generate_message_struct_pb_func_definitions(p);
@@ -233,29 +233,38 @@ void FileGenerator::generate_message_tostring_func_definitions(
   std::vector<const Descriptor *> msgs = flatten_messages_in_file(file_);
   Formatter format(p);
 
-  
   for (auto msg : msgs) {
-    if(is_eigen_type(msg)) {continue;}
+    if (is_eigen_type(msg)) {
+      continue;
+    }
 
     auto raw_name = msg->name();
     auto name = qualified_class_name(msg, options_);
     format("// $1$\n", name);
     format("REFLECTION($1$", raw_name);
-    for(int i = 0; i < msg->field_count();++i)
-    {
-      format(", $1$", msg->field(i)->name());
+    for (int i = 0; i < msg->field_count(); ++i) {
+      auto fd = msg->field(i);
+      if (fd->options().GetExtension(inherits_from)) {
+        auto fd2 = fd->message_type();
+        for (int j = 0; j < fd2->field_count(); ++j) {
+          format(", $1$", fd2->field(j)->name());
+        }
+      }
+      else {
+        format(", $1$", fd->name());
+      }
     }
     format(");\n");
   }
 
   // enum
-  std::vector<const EnumDescriptor *> enums = flatten_enums_in_file(file_);
-  for (auto single_enum : enums) {
-    auto name = qualified_enum_name(single_enum, options_);
-    format("// $1$\n", name);
-    format("extern std::map<$1$, std::string> k$2$_EnumToString;", name, resolve_keyword(single_enum->name()));
-    format("\n");
-  }
+  // std::vector<const EnumDescriptor *> enums = flatten_enums_in_file(file_);
+  // for (auto single_enum : enums) {
+  //   auto name = qualified_enum_name(single_enum, options_);
+  //   format("// $1$\n", name);
+  //   format("extern std::map<$1$, std::string> k$2$_EnumToString;", name, resolve_keyword(single_enum->name()));
+  //   format("\n");
+  // }
 
 }
 

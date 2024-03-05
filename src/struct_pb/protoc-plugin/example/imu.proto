@@ -5,6 +5,7 @@ import "base.proto";
 import "proto_to_struct.proto";
 
 
+
 message ZImu
 {
     Header header = 1 [(inherits_from) = true];
