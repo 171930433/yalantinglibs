@@ -177,12 +177,26 @@ void MessageFieldGenerator::generate_class_to_struct(
 }
 
 void RepeatedMessageFieldGenerator::generate_struct_to_class(
-    google::protobuf::io2::Printer *p) const {}
+    google::protobuf::io2::Printer *p) const {
+  Formatter format(p);
+  auto v_class_name = "result.mutable_" + name() + "()";
+  auto v_struct_name = "in." + name();
+  p->Print({{"result", v_class_name}, {"in", v_struct_name}}, 
+R"($result$->Reserve($in$.size());
+for(int i = 0;i < $in$.size();++i) { *$result$->Mutable(i) = StructToClass($in$[i]);} 
+)");
+}
 
 void RepeatedMessageFieldGenerator::generate_class_to_struct(
     google::protobuf::io2::Printer *p) const {
-
-    }
+  Formatter format(p);
+  auto v_class_name = "in." + name() + "()";
+  auto v_struct_name = "result." + name();
+  p->Print({{"in", v_class_name}, {"result", v_struct_name}}, 
+R"($result$.reserve($in$.size());
+for(auto const& elem : $in$) { $result$.emplace_back(ClassToStruct(elem));}
+)");
+}
 
 }  // namespace compiler
 }  // namespace struct_pb
