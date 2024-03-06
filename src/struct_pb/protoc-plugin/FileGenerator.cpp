@@ -61,9 +61,7 @@ void FileGenerator::generate_eigen_helper(google::protobuf::io2::Printer *p)
   }
 
   p->PrintRaw(
-R"(namespace Eigen
-{
-
+R"(namespace Eigen {
 template <bool Is_writing_escape, typename Stream, typename _Scalar, int _Row,int _Col>
 inline void to_json_impl(Stream& s, const Eigen::Matrix<_Scalar,_Row,_Col>& t) {
   iguana::to_json<Is_writing_escape>(*(_Scalar(*)[_Row * _Col]) & t, s);
@@ -85,6 +83,27 @@ IGUANA_INLINE void from_json_impl(Eigen::Quaternion<_Scalar>& value, It&& it, It
 }
 
 })");
+
+}
+
+void FileGenerator::generate_enum_helper(google::protobuf::io2::Printer *p) {
+    
+  Formatter format(p);
+  NamespaceOpener(p, "iguana").open();
+  std::vector<const EnumDescriptor *> enums = flatten_enums_in_file(file_);
+  for (auto msg : enums) {
+    auto struct_name = qualified_enum_name(msg, options_);
+    format("template <> struct enum_value<$1$> {\n", struct_name);
+    format.indent();
+    format("  constexpr static std::array<int, $1$> value = {", std::to_string(msg->value_count()));
+    for(int i = 0; i < msg->value_count();++i) {
+      format("$1$, ", msg->value(i)->number());
+    }
+    format("};\n};\n");
+    format.outdent();
+  }
+
+  NamespaceOpener(p, "iguana").close();
 
 }
 
@@ -126,6 +145,7 @@ void FileGenerator::generate_header(google::protobuf::io2::Printer *p) {
   NamespaceOpener(p, options_.converter_namespace).close();
 
   generate_eigen_helper(p);
+  generate_enum_helper(p);
   p->Print("// clang-format on\n");
 }
 
@@ -363,6 +383,15 @@ void FileGenerator::generate_message_struct2class_definitions(
     auto class_name = "::" + file_->package() + "::" + msg->name();
     format("$1$ StructToClass($2$ const& in);\n",class_name,struct_name);
   }
+  // enum
+  format("// enum\n");
+  std::vector<const EnumDescriptor *> enums = flatten_enums_in_file(file_);
+  for (auto msg : enums) {
+    auto struct_name = qualified_enum_name(msg, options_);
+    auto class_name = "::" + file_->package() + "::" + msg->name();
+    format("$1$ StructToClass($2$ const& in);\n", class_name, struct_name);
+  }
+
   format("\n");
 }
 void FileGenerator::generate_message_class2struct_definitions(
@@ -374,6 +403,14 @@ void FileGenerator::generate_message_class2struct_definitions(
     auto struct_name = qualified_class_name(msg, options_);
     auto class_name = "::" + file_->package() + "::" + msg->name();
     format("$1$ ClassToStruct($2$ const& in);\n",struct_name, class_name);
+  }
+  // enum
+  format("// enum\n");
+  std::vector<const EnumDescriptor *> enums = flatten_enums_in_file(file_);
+  for (auto msg : enums) {
+    auto struct_name = qualified_enum_name(msg, options_);
+    auto class_name = "::" + file_->package() + "::" + msg->name();
+    format("$1$ ClassToStruct($2$ const& in);\n", struct_name, class_name);
   }
   format("\n");
 }
@@ -410,6 +447,14 @@ void FileGenerator::generate_message_struct2class_source(
     format.outdent();
     format("}\n");
   }
+  // enum
+  format("// enum\n");
+  std::vector<const EnumDescriptor *> enums = flatten_enums_in_file(file_);
+  for (auto msg : enums) {
+    auto struct_name = qualified_enum_name(msg, options_);
+    auto class_name = "::" + file_->package() + "::" + msg->name();
+    format("$1$ StructToClass($2$ const& in) { return $1$(int(in));}\n", class_name, struct_name);
+  }
 }
 
 void FileGenerator::generate_message_class2struct_source(
@@ -427,6 +472,13 @@ void FileGenerator::generate_message_class2struct_source(
     format("return result;\n");
     format.outdent();
     format("}\n");
+  }
+  // enum
+  std::vector<const EnumDescriptor *> enums = flatten_enums_in_file(file_);
+  for (auto msg : enums) {
+    auto struct_name = qualified_enum_name(msg, options_);
+    auto class_name = "::" + file_->package() + "::" + msg->name();
+    format("$1$ ClassToStruct($2$ const& in) { return $1$(int(in));}\n", struct_name, class_name);
   }
 }
 
