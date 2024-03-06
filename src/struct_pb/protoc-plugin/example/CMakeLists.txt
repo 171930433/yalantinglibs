@@ -15,6 +15,8 @@ if (Protobuf_FOUND)
     proto_to_struct.proto
     base.proto
     imu.proto
+    gnss.proto
+    state.proto
     )
     add_executable(struct_pb_tutorial tutorial.cpp           
       ${PROTO_SRCS}
@@ -30,6 +32,8 @@ if (Protobuf_FOUND)
     # addressbook.proto  
     base.proto
     imu.proto
+    gnss.proto
+    state.proto
     OPTION "namespace=inner_struct,converter_namespace=converter")
 
 endif()

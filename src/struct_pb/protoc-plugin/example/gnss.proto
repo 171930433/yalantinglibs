@@ -1,0 +1,25 @@
+syntax = "proto3";
+package inner_class;
+
+import "proto_to_struct.proto";
+import "base.proto";
+
+message ZGnss
+{
+  ZFrame header = 1 [(inherits_from) = true];;
+  int32 msg_type = 2;
+  double hdop = 3;
+  Point3D pos = 4;      
+  int32 status = 5;               
+  int32 sat_num = 6;
+  double rtk_age = 7;
+  Point3D std_pos = 8;
+  Point3D vel = 9;
+  double azi_track = 10;
+  double speed = 11;
+  Point3D std_vel = 12;
+  Point2D dual_antenna_angle =13;
+  Point2D dual_antenna_std = 14;
+  int32 heading_status = 15;
+  int32 heading_sat_num = 16;
+}

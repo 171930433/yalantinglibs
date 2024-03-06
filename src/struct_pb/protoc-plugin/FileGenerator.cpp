@@ -276,9 +276,21 @@ void FileGenerator::generate_ns_close(google::protobuf::io2::Printer *p) {
 
 void FileGenerator::generate_message_reflection_definitions(
     google::protobuf::io2::Printer *p) {
+      using namespace google::protobuf;
   std::vector<const Descriptor *> msgs = flatten_messages_in_file(file_);
   Formatter format(p);
   format("// reflection_definitions\n");
+
+  auto print_normal_field = [format](Descriptor const *msg) {
+    for (int i = 0; i < msg->field_count(); ++i) {
+      auto fd = msg->field(i);
+      if (!fd->options().GetExtension(inherits_from)) {
+        format(", $1$", fd->name());
+        // std::cerr << ", " << fd->name() <<" \n";
+      }
+    }
+  };
+
   for (auto msg : msgs) {
     if (is_eigen_type(msg)) {
       continue;
@@ -287,18 +299,9 @@ void FileGenerator::generate_message_reflection_definitions(
     auto raw_name = msg->name();
     auto name = qualified_class_name(msg, options_);
     format("REFLECTION($1$", raw_name);
-    for (int i = 0; i < msg->field_count(); ++i) {
-      auto fd = msg->field(i);
-      if (fd->options().GetExtension(inherits_from)) {
-        auto fd2 = fd->message_type();
-        for (int j = 0; j < fd2->field_count(); ++j) {
-          format(", $1$", fd2->field(j)->name());
-        }
-      }
-      else {
-        format(", $1$", fd->name());
-      }
-    }
+
+    for_each_parent_message(msg, print_normal_field);
+
     format(");\n");
   }
 

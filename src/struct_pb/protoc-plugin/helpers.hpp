@@ -47,6 +47,18 @@ void for_each_message(const google::protobuf::FileDescriptor *descriptor,
   }
 }
 
+template <typename F>
+void for_each_parent_message(const google::protobuf::Descriptor *descriptor,
+                      F &&func) {
+  for (int i = 0; i < descriptor->field_count(); ++i) {
+      auto fd = descriptor->field(i);
+      if (fd->options().GetExtension(inherits_from)) {
+        for_each_parent_message(fd->message_type(), std::forward<F &&>(func));
+      }
+  }
+  func(descriptor);
+}
+
 inline void flatten_messages_in_file(
     const google::protobuf::FileDescriptor *file,
     std::vector<const google::protobuf::Descriptor *> *result) {
