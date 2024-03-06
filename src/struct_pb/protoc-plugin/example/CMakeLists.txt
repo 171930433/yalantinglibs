@@ -17,6 +17,8 @@ if (Protobuf_FOUND)
     imu.proto
     gnss.proto
     state.proto
+    chasis.proto
+    perception.proto
     )
     add_executable(struct_pb_tutorial tutorial.cpp           
       ${PROTO_SRCS}
@@ -34,6 +36,8 @@ if (Protobuf_FOUND)
     imu.proto
     gnss.proto
     state.proto
+    chasis.proto
+    perception.proto
     OPTION "namespace=inner_struct,converter_namespace=converter")
 
 endif()

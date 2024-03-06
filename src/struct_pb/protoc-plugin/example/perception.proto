@@ -1,0 +1,51 @@
+syntax = "proto3";
+package inner_class;
+
+import "base.proto";
+import "proto_to_struct.proto";
+
+message ZPercBase
+{
+  int32 track_id = 1;
+  string id = 2;  // 需要单帧独立
+  float object_confidence = 3;
+  repeated Point3D points = 4;
+  repeated Point3D points_confidence = 5;
+}
+
+message ZPercLine
+{
+  ZPercBase base = 1 [(inherits_from) = true];
+  int32 ptype = 2;
+  int32 color = 3;
+  float c0 = 4;
+  float c1 = 5;
+  float c2 = 6;
+  float c3 = 7;
+  float begin_dist = 8;
+  float end_dist = 9;
+  int32 side_type = 10;
+}
+
+message ZPercSign
+{
+  ZPercBase base = 1 [(inherits_from) = true];
+  int32 ptype = 2;
+  float rect_width = 3;
+  float rect_height = 4;
+}
+
+message ZPercPole
+{
+  ZPercBase base = 1 [(inherits_from) = true];
+  int32 ptype = 2;
+}
+
+message ZPerception
+{
+  ZFrame header = 1  [(inherits_from) = true];
+  int32 ptype = 2;
+  repeated ZPercLine line = 3;
+  repeated ZPercSign sign = 4;
+  repeated ZPercPole pole = 5;
+}

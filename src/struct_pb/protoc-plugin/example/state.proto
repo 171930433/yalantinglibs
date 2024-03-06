@@ -5,7 +5,7 @@ import "base.proto";
 import "proto_to_struct.proto";
 
 
-message State{
+message ZState{
    ZFrame header = 1 [(inherits_from) = true];
    Point3D pos = 2;//位置: X Y Z
    Point3D pos_llh = 3; //位置:纬度 经度 高度
@@ -28,8 +28,8 @@ message AugmentationState{
    Quaternion qua = 3;
 }
    
-message ExtendState{
-   State state = 1 [(inherits_from) = true];
+message ZExtendState{
+   ZState state = 1 [(inherits_from) = true];
    IntrinsicImuPara imu_in_para = 2;
    Point4D odo_in_para = 3;
    Matrix cov = 4;
