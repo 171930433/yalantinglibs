@@ -4,7 +4,6 @@ package inner_class;
 import "base.proto";
 import "proto_to_struct.proto";
 
-
 message ZState{
    ZFrame header = 1 [(inherits_from) = true];
    Point3D pos = 2;//位置: X Y Z
@@ -36,4 +35,6 @@ message ZExtendState{
    int32 vs = 5;
    int32 fs = 6;
    repeated AugmentationState augmentation_state = 7;
+   map<uint64, AugmentationState> augmentation_state2 = 8;
 }
+

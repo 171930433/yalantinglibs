@@ -294,5 +294,35 @@ pos += msg_sz;
     }
   }
 }
+
+bool MessageOrEnum(google::protobuf::FieldDescriptor const* fd)
+{
+  using namespace google::protobuf;
+  return fd->type() == FieldDescriptor::TYPE_MESSAGE || fd->type() == FieldDescriptor::TYPE_ENUM;
+}
+
+void MapFieldGenerator::generate_struct_to_class(google::protobuf::io2::Printer *p) const{
+  std::string v_struct_name = "in." + name();
+  std::string v_class_name = "result.mutable_" + name() + "()";
+  std::string key_fun = MessageOrEnum(d_->message_type()->field(0)) ? "StructToClass" : "";
+  std::string val_fun = MessageOrEnum(d_->message_type()->field(1)) ? "StructToClass" : "";
+
+  p->Print({{"in",v_struct_name},{"result",v_class_name},{"kf",key_fun},{"vf",val_fun}},
+R"(for(auto const&[key,val] : $in$) { (*$result$)[$kf$(key)] = $vf$(val);}
+)"
+  );
+
+}
+void MapFieldGenerator::generate_class_to_struct(google::protobuf::io2::Printer *p) const{
+  std::string v_struct_name = "result." + name();
+  std::string v_class_name = "in." + name() + "()";
+  std::string key_fun = MessageOrEnum(d_->message_type()->field(0)) ? "ClassToStruct" : "";
+  std::string val_fun = MessageOrEnum(d_->message_type()->field(1)) ? "ClassToStruct" : "";
+  p->Print({{"in",v_class_name},{"result",v_struct_name},{"kf",key_fun},{"vf",val_fun}},
+R"(for(auto const&[key,val] : $in$) { $result$[$kf$(key)] = $vf$(val);}
+)"
+);
+}
+
 }  // namespace compiler
 }  // namespace struct_pb

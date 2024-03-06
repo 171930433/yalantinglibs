@@ -34,6 +34,10 @@ class MapFieldGenerator : public FieldGenerator {
                                     const std::string &value,
                                     const std::string &max_size) const;
 
+  // added 
+  virtual void generate_struct_to_class(google::protobuf::io2::Printer *p) const;
+  virtual void generate_class_to_struct(google::protobuf::io2::Printer *p) const;
+
  private:
   std::string get_key_type_name() const;
   std::string get_value_type_name() const;
