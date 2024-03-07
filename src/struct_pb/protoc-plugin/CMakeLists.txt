@@ -7,6 +7,7 @@ project(protoc-gen-struct_pb)
 
 
 
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/output/bin)
 find_package(Protobuf QUIET)
 if (Protobuf_FOUND)

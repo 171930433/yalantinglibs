@@ -9,8 +9,8 @@ message ZPercBase
   int32 track_id = 1;
   string id = 2;  // 需要单帧独立
   float object_confidence = 3;
-  repeated Point3D points = 4;
-  repeated Point3D points_confidence = 5;
+  repeated Vector3d points = 4;
+  repeated Vector3d points_confidence = 5;
 }
 
 message ZPercLine

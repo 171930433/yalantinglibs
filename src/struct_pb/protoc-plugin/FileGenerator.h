@@ -41,6 +41,7 @@ class FileGenerator : public GeneratorBase {
   void generate_message_class2struct_source(google::protobuf::io2::Printer *p);
   void generate_message_tostring_source(google::protobuf::io2::Printer *p);
   void generate_eigen_helper(google::protobuf::io2::Printer *p);
+  void generate_pcl_helper(google::protobuf::io2::Printer *p);
   void generate_enum_helper(google::protobuf::io2::Printer *p);
 
  private:

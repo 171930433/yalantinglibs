@@ -61,21 +61,35 @@ void protobuf_AddDesc_proto_5fto_5fstruct_2eproto() {
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\025proto_to_struct.proto\032 google/protobuf"
     "/descriptor.proto::\n\022write_eigen_helper\022"
-    "\034.google.protobuf.FileOptions\030\240\234\001 \001(\010:9\n"
-    "\016eigen_typename\022\037.google.protobuf.Messag"
-    "eOptions\030\241\234\001 \001(\t:6\n\rinherits_from\022\035.goog"
-    "le.protobuf.FieldOptions\030\242\234\001 \001(\010b\006proto3", 240);
+    "\034.google.protobuf.FileOptions\030\240\234\001 \001(\010:8\n"
+    "\020write_pcl_helper\022\034.google.protobuf.File"
+    "Options\030\241\234\001 \001(\010:9\n\016eigen_typename\022\037.goog"
+    "le.protobuf.MessageOptions\030\204\235\001 \001(\t:7\n\014pc"
+    "l_typename\022\037.google.protobuf.MessageOpti"
+    "ons\030\205\235\001 \001(\t:6\n\rinherits_from\022\035.google.pr"
+    "otobuf.FieldOptions\030\350\235\001 \001(\010:1\n\010fix_size\022"
+    "\035.google.protobuf.FieldOptions\030\351\235\001 \001(\005b\006"
+    "proto3", 406);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "proto_to_struct.proto", &protobuf_RegisterTypes);
   ::google::protobuf::internal::ExtensionSet::RegisterExtension(
     &::google::protobuf::FileOptions::default_instance(),
     20000, 8, false, false);
   ::google::protobuf::internal::ExtensionSet::RegisterExtension(
+    &::google::protobuf::FileOptions::default_instance(),
+    20001, 8, false, false);
+  ::google::protobuf::internal::ExtensionSet::RegisterExtension(
     &::google::protobuf::MessageOptions::default_instance(),
-    20001, 9, false, false);
+    20100, 9, false, false);
+  ::google::protobuf::internal::ExtensionSet::RegisterExtension(
+    &::google::protobuf::MessageOptions::default_instance(),
+    20101, 9, false, false);
   ::google::protobuf::internal::ExtensionSet::RegisterExtension(
     &::google::protobuf::FieldOptions::default_instance(),
-    20002, 8, false, false);
+    20200, 8, false, false);
+  ::google::protobuf::internal::ExtensionSet::RegisterExtension(
+    &::google::protobuf::FieldOptions::default_instance(),
+    20201, 5, false, false);
   ::google::protobuf::internal::OnShutdown(&protobuf_ShutdownFile_proto_5fto_5fstruct_2eproto);
 }
 
@@ -88,13 +102,23 @@ struct StaticDescriptorInitializer_proto_5fto_5fstruct_2eproto {
 ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::FileOptions,
     ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false >
   write_eigen_helper(kWriteEigenHelperFieldNumber, false);
+::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::FileOptions,
+    ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false >
+  write_pcl_helper(kWritePclHelperFieldNumber, false);
 const ::std::string eigen_typename_default("");
 ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::MessageOptions,
     ::google::protobuf::internal::StringTypeTraits, 9, false >
   eigen_typename(kEigenTypenameFieldNumber, eigen_typename_default);
+const ::std::string pcl_typename_default("");
+::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::MessageOptions,
+    ::google::protobuf::internal::StringTypeTraits, 9, false >
+  pcl_typename(kPclTypenameFieldNumber, pcl_typename_default);
 ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::FieldOptions,
     ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false >
   inherits_from(kInheritsFromFieldNumber, false);
+::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::FieldOptions,
+    ::google::protobuf::internal::PrimitiveTypeTraits< ::google::protobuf::int32 >, 5, false >
+  fix_size(kFixSizeFieldNumber, 0);
 
 // @@protoc_insertion_point(namespace_scope)
 

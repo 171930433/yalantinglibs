@@ -6,6 +6,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/output/examples)
 
 include(../cmake/struct_pb.cmake)
 
+cmake_policy(SET CMP0075 NEW)
+find_package(PCL REQUIRED package common)
+
+
 if (Protobuf_FOUND)
 
     # generate .pb.cc .pb.h
@@ -19,15 +23,17 @@ if (Protobuf_FOUND)
     state.proto
     chasis.proto
     perception.proto
+    # pointcloud.proto
     )
     add_executable(struct_pb_tutorial tutorial.cpp           
       ${PROTO_SRCS}
       ${PROTO_HDRS})
-      target_link_libraries(struct_pb_tutorial protobuf::libprotobuf)
+      target_link_libraries(struct_pb_tutorial protobuf::libprotobuf pcl_common)
 
     target_include_directories(struct_pb_tutorial PUBLIC 
       ${CMAKE_CURRENT_BINARY_DIR}
       ${CMAKE_CURRENT_LIST_DIR}
+      ${PCL_INCLUDE_DIRS}
       )
 
     target_protos_struct_pb(struct_pb_tutorial PRIVATE 
@@ -38,6 +44,7 @@ if (Protobuf_FOUND)
     state.proto
     chasis.proto
     perception.proto
+    # pointcloud.proto
     OPTION "namespace=inner_struct,converter_namespace=converter")
 
 endif()

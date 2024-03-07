@@ -5,8 +5,6 @@
 
 // #include "addressbook.struct_pb.h"
 #include "imu.struct_pb.h"
-// protobuf
-
 
 int main() {
 
@@ -18,6 +16,14 @@ int main() {
   std::cout << imu1 << std::endl;
   std::cout << imu2.ShortDebugString() << std::endl;
   std::cout << imu3 << std::endl;
+
+
+  // inner_struct::ZPointCloudXYZI pc1;
+  // pc1.points.push_back(pcl::PointXYZI());
+  // pc1.points.push_back(pcl::PointXYZI());
+  // pcl::PointXYZI p1;
+
+  // std::cout << p1 << std::endl;
 
 
   std::cout << "Done!!!" << std::endl;

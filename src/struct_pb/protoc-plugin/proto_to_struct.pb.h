@@ -43,14 +43,26 @@ static const int kWriteEigenHelperFieldNumber = 20000;
 extern ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::FileOptions,
     ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false >
   write_eigen_helper;
-static const int kEigenTypenameFieldNumber = 20001;
+static const int kWritePclHelperFieldNumber = 20001;
+extern ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::FileOptions,
+    ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false >
+  write_pcl_helper;
+static const int kEigenTypenameFieldNumber = 20100;
 extern ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::MessageOptions,
     ::google::protobuf::internal::StringTypeTraits, 9, false >
   eigen_typename;
-static const int kInheritsFromFieldNumber = 20002;
+static const int kPclTypenameFieldNumber = 20101;
+extern ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::MessageOptions,
+    ::google::protobuf::internal::StringTypeTraits, 9, false >
+  pcl_typename;
+static const int kInheritsFromFieldNumber = 20200;
 extern ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::FieldOptions,
     ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false >
   inherits_from;
+static const int kFixSizeFieldNumber = 20201;
+extern ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::FieldOptions,
+    ::google::protobuf::internal::PrimitiveTypeTraits< ::google::protobuf::int32 >, 5, false >
+  fix_size;
 
 // ===================================================================
 

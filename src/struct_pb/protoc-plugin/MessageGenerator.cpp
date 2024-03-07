@@ -56,12 +56,16 @@ void MessageGenerator::generate_struct_definition(
   if (!d_->options().GetExtension(eigen_typename).empty()) {
     return;
   }
+  // added 跳过pcl类型的定义
+  if (!d_->options().GetExtension(pcl_typename).empty()) {
+    return;
+  }
 
   std::string parent = "";
   for (int i = 0; i < d_->field_count(); ++i) {
     auto fd = d_->field(i);
     if (fd->options().GetExtension(inherits_from)) {
-      parent = std::string(": public ") + fg_map_.get(fd).cpp_type_name();
+      parent += (i == 0 ? ":" : ",") + std::string("public ") + fg_map_.get(fd).cpp_type_name();
     }
   }
 
@@ -240,23 +244,22 @@ void MessageGenerator::generate_struct_to_class_to(google::protobuf::io2::Printe
 
   if (std::string eigen_name = d_->options().GetExtension(eigen_typename);
       !eigen_name.empty()) {
-    if (eigen_name == "Eigen::MatrixXd") {
+    if (eigen_name.find("Eigen::Matrix") != std::string::npos) {
       format("result.mutable_data()->CopyFrom({in.data(),in.data()+in.size()});""\n");
       format("result.set_col(in.cols());\n");
       format("result.set_row(in.rows());\n");
     }
-    else if (eigen_name == "Eigen::Vector3d" ||
-             eigen_name == "Eigen::Vector2d" ||
-             eigen_name == "Eigen::Vector4d") {
-      for (int i = 0; i < d_->field_count(); ++i) {
-        auto f = d_->field(i);
-        format("result.set_$1$(in[$2$]);\n", f->name(), std::to_string(i));
-      }
-    }
-    else if (eigen_name == "Eigen::Quaterniond") {
+    else if (eigen_name.find("Eigen::Vector") != std::string::npos || eigen_name.find("Eigen::Quaternion") != std::string::npos) {
       for (int i = 0; i < d_->field_count(); ++i) {
         auto f = d_->field(i);
         format("result.set_$1$(in.$1$());\n", f->name());
+
+      }
+    }
+    else if (eigen_name.find("pcl::") != std::string::npos) {
+      for (int i = 0; i < d_->field_count(); ++i) {
+        auto f = d_->field(i);
+        // format("result.set_$1$(in.$1$());\n", f->name());
       }
     }
     else {
@@ -286,21 +289,20 @@ void MessageGenerator::generate_class_to_struct_to(google::protobuf::io2::Printe
 
   if (std::string eigen_name = d_->options().GetExtension(eigen_typename);
       !eigen_name.empty()) {
-    if (eigen_name == "Eigen::MatrixXd") {
+    if (eigen_name.find("Eigen::Matrix") != std::string::npos) {
       format("result = Eigen::Map<Eigen::MatrixXd const>(in.data().begin(), in.row(),in.col());\n");
     }
-    else if (eigen_name == "Eigen::Vector3d" ||
-             eigen_name == "Eigen::Vector2d" ||
-             eigen_name == "Eigen::Vector4d") {
+    else if (eigen_name.find("Eigen::Vector") != std::string::npos || eigen_name.find("Eigen::Quaternion") != std::string::npos) {
       for (int i = 0; i < d_->field_count(); ++i) {
         auto f = d_->field(i);
-        format("result[$1$] = in.$2$();\n", std::to_string(i), f->name());
+        // format("result[$1$] = in.$2$();\n", std::to_string(i), f->name());
+        format("result.$1$() = in.$1$();\n", f->name());
       }
     }
-    else if (eigen_name == "Eigen::Quaterniond") {
+    else if (eigen_name.find("pcl::") != std::string::npos) {
       for (int i = 0; i < d_->field_count(); ++i) {
         auto f = d_->field(i);
-        format("result.$1$() = in.$1$();\n", f->name());
+        // format("result.$1$() = in.$1$();\n", f->name());
       }
     }
     else {

@@ -6,32 +6,32 @@ import "proto_to_struct.proto";
 
 message ZState{
    ZFrame header = 1 [(inherits_from) = true];
-   Point3D pos = 2;//位置: X Y Z
-   Point3D pos_llh = 3; //位置:纬度 经度 高度
-   Point3D vel = 4; // 速度: ENU
-   Point3D att = 5; //姿态: 俯仰 横滚 航向
-   Point3D wv = 6;// 车体系下的角速度
-   Point3D fv = 7;// 车体系下的运动加速度
+   Vector3d pos = 2;//位置: X Y Z
+   Vector3d pos_llh = 3; //位置:纬度 经度 高度
+   Vector3d vel = 4; // 速度: ENU
+   Vector3d att = 5; //姿态: 俯仰 横滚 航向
+   Vector3d wv = 6;// 车体系下的角速度
+   Vector3d fv = 7;// 车体系下的运动加速度
    double mileage = 8; // 总里程数
    int32 status = 9;// 定位状态
 }
 
 message IntrinsicImuPara{
-   Point3D ba = 1;
-   Point3D bg = 2;
+   Vector3d ba = 1;
+   Vector3d bg = 2;
 }
    
 message AugmentationState{
    double t0 = 1;
-   Point3D pos = 2;
-   Quaternion qua = 3;
+   Vector3d pos = 2;
+   Quaterniond qua = 3;
 }
    
 message ZExtendState{
    ZState state = 1 [(inherits_from) = true];
    IntrinsicImuPara imu_in_para = 2;
-   Point4D odo_in_para = 3;
-   Matrix cov = 4;
+   Vector4d odo_in_para = 3;
+   MatrixXd cov = 4;
    int32 vs = 5;
    int32 fs = 6;
    repeated AugmentationState augmentation_state = 7;

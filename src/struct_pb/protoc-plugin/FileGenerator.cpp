@@ -54,6 +54,36 @@ void FileGenerator::generate_shared_header_code(
 }
 
 
+void FileGenerator::generate_pcl_helper(google::protobuf::io2::Printer *p)
+{
+  if (!file_->options().GetExtension(write_pcl_helper)) {
+    return;
+  }
+  p->PrintRaw(
+R"(namespace pcl {
+template <bool Is_writing_escape, typename Stream>
+inline void to_json_impl(Stream& s, const pcl::PointXYZI& t) {
+iguana::to_json<Is_writing_escape>(*(float(*)[8]) & t, s);
+}
+
+template <typename It, typename Stream>
+IGUANA_INLINE void from_json_impl(pcl::PointXYZI& value, It&& it, It&& end) {
+iguana::from_json(*(float(*)[8]) & value, it, end);
+}
+
+template <bool Is_writing_escape, typename Stream>
+inline void to_json_impl(Stream& s, const pcl::PointCloud<pcl::PointXYZI>& t) {
+// iguana::to_json<Is_writing_escape>(*(_Scalar(*)[_Row * _Col]) & t, s);
+}
+
+template <typename It, typename Stream>
+IGUANA_INLINE void from_json_impl(pcl::PointCloud<pcl::PointXYZI>& value, It&& it, It&& end) {
+// iguana::from_json(*(_Scalar(*)[_Row * _Col]) & value, it, end);
+}
+
+})");
+
+}
 void FileGenerator::generate_eigen_helper(google::protobuf::io2::Printer *p)
 {
   if (!file_->options().GetExtension(write_eigen_helper)) {
@@ -109,6 +139,7 @@ void FileGenerator::generate_enum_helper(google::protobuf::io2::Printer *p) {
 
 void FileGenerator::generate_header(google::protobuf::io2::Printer *p) {
   auto basename = strip_proto(file_->name());
+  Formatter format(p);
   p->Print(
       {{"filename", file_->name()},
        {"pb_header_file", basename + ".pb.h"}
@@ -132,6 +163,15 @@ void FileGenerator::generate_header(google::protobuf::io2::Printer *p) {
 #include "$pb_header_file$"
 )");
 
+  if(file_->options().GetExtension(write_pcl_helper))
+  {
+    p->PrintRaw(
+R"(#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+)");
+  }
+
+
   generate_dependency_includes(p);  // 包含的其他头文件
   generate_ns_open(p);              // 写命名空间
   generate_shared_header_code(p);
@@ -146,6 +186,8 @@ void FileGenerator::generate_header(google::protobuf::io2::Printer *p) {
 
   generate_eigen_helper(p);
   generate_enum_helper(p);
+  generate_pcl_helper(p);
+
   p->Print("// clang-format on\n");
 }
 
@@ -154,11 +196,15 @@ void FileGenerator::generate_fwd_decls(google::protobuf::io2::Printer *p) {
   for (int i = 0; i < file_->message_type_count(); ++i) {
     auto m = file_->message_type(i);
     auto eigen_name = m->options().GetExtension(eigen_typename);
-    if (eigen_name.empty()) {
-      format("struct $1$;\n", resolve_keyword(m->name()));
+    auto pcl_name = m->options().GetExtension(pcl_typename);
+    if (!eigen_name.empty()) {
+      format("using $1$ = $2$;\n", resolve_keyword(m->name()), eigen_name);
+    }
+    else if (!pcl_name.empty()) {
+      format("using $1$ = $2$;\n", resolve_keyword(m->name()), pcl_name);
     }
     else {
-      format("using $1$ = $2$;\n", resolve_keyword(m->name()), eigen_name);
+      format("struct $1$;\n", resolve_keyword(m->name()));
     }
     // std::cerr << " i= " << i << ", name = " << m->name() << "\n";
   }
