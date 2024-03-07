@@ -7,8 +7,8 @@ import "proto_to_struct.proto";
 message ZImu
 {
     ZFrame header = 1 [(inherits_from) = true];
-    Point3D acc = 2;                    // 加速度 g
-    Point3D gyr = 3;                    // 角速度 rad/s
+    Vector3d acc = 2;                    // 加速度 g
+    Vector3d gyr = 3;                    // 角速度 rad/s
     double temper = 4;                  // 温度 ℃
 }
 

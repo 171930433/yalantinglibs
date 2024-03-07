@@ -449,5 +449,32 @@ void RepeatedPrimitiveFieldGenerator::generate_deserialization_unpacked_only(
   PrimitiveFieldGenerator g(d_, options_);
   g.generate_deserialization_only(p, output);
 }
+
+  // added
+void RepeatedPrimitiveFieldGenerator::generate_struct_to_class(
+    google::protobuf::io2::Printer *p) const {
+        Formatter format(p);
+  auto v_class_name = "result.mutable_" + name() + "()";
+  auto v_struct_name = "in." + name();
+  int size = d_->options().GetExtension(fix_size);
+  std::string size_str = size > 0 ? std::to_string(size) : (v_struct_name + ".size()");
+  p->Print({{"result", v_class_name}, {"in", v_struct_name}, {"cpp_name", cpp_type_name()}, {"size",size_str}},
+R"($result$->Reserve($size$);
+for(int i = 0;i < $size$;++i) { *$result$->Mutable(i) = $in$[i];} 
+)");
+}
+void RepeatedPrimitiveFieldGenerator::generate_class_to_struct(
+    google::protobuf::io2::Printer *p) const {
+  auto v_class_name = "in." + name() + "";
+  auto v_struct_name = "result." + name();
+  int size = d_->options().GetExtension(fix_size);
+  std::string size_str = size > 0 ? std::to_string(size) : (v_class_name + "().size()");
+  
+  p->Print({{"in", v_class_name}, {"result", v_struct_name},{"cpp_name", cpp_type_name()},{"size",size_str}}, 
+R"(for(int i = 0;i < $size$;++i) {$result$[i] = $in$(i);}
+)");
+
+}
+  
 }  // namespace compiler
 }  // namespace struct_pb

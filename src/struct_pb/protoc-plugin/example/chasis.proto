@@ -7,8 +7,8 @@ import "proto_to_struct.proto";
 message ZChassis
 {
   ZFrame header = 1 [(inherits_from) = true];
-  Point4D vel = 2;
-  Point4D spd_status = 3;
+  Vector4d vel = 2;
+  Vector4d spd_status = 3;
   double steering_percentage = 4;
   double brake_percentage = 5;
   bool parking_brake = 6;

@@ -49,7 +49,9 @@ class RepeatedPrimitiveFieldGenerator : public FieldGenerator {
                                             const std::string &max_size) const;
   void generate_deserialization_unpacked_only(google::protobuf::io2::Printer *p,
                                               const std::string &output) const;
-
+  // added
+  void generate_struct_to_class(google::protobuf::io2::Printer *p) const override;
+  void generate_class_to_struct(google::protobuf::io2::Printer *p) const override;
  private:
   bool is_packed() const;
   std::string packed_tag() const;

@@ -64,18 +64,27 @@ message ZFrame
      string channel_name = 5;
 }
 
+message Vector4f
+{
+    option(eigen_typename) = "Eigen::Vector4f";
 
-message Point4D
+     float x = 1;
+     float y = 2;
+     float z = 3;
+     float w = 4;
+}
+
+message Vector4d
 {
     option(eigen_typename) = "Eigen::Vector4d";
 
      double x = 1;
      double y = 2;
      double z = 3;
-     double i = 4;
+     double w = 4;
 }
 
-message Point3D
+message Vector3d
 {
     option(eigen_typename) = "Eigen::Vector3d";
 
@@ -84,7 +93,7 @@ message Point3D
      double z = 3;
 }
 
-message Point2D
+message Vector2d
 {
     option(eigen_typename) = "Eigen::Vector2d";
 
@@ -92,7 +101,7 @@ message Point2D
      double y = 2;
 }
 
-message Quaternion {
+message Quaterniond {
     option(eigen_typename) = "Eigen::Quaterniond";
 
      double w = 1;
@@ -101,6 +110,15 @@ message Quaternion {
      double z = 4;
 }
 
+message Quaternionf {
+     option(eigen_typename) = "Eigen::Quaternionf";
+ 
+      float w = 1;
+      float x = 2;
+      float y = 3;
+      float z = 4;
+ }
+
 message PointLLH {
      double lon = 1;
      double lat = 2;
@@ -108,7 +126,7 @@ message PointLLH {
 }
 
 // hard code, never edit
-message Matrix
+message MatrixXd
 {
     option(eigen_typename) = "Eigen::MatrixXd";
 

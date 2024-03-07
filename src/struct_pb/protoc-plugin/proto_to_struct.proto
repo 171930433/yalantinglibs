@@ -5,15 +5,18 @@ import "google/protobuf/descriptor.proto";
 extend google.protobuf.FileOptions {
   // 当前message是否解析
   bool write_eigen_helper = 20000;
+  bool write_pcl_helper = 20001;
 }
 
 extend google.protobuf.MessageOptions {
   // 当前message是否解析
-  string eigen_typename = 20001;
+  string eigen_typename = 20100;
+  string pcl_typename = 20101;
 }
 
 extend google.protobuf.FieldOptions {
   // 当前message是否解析
-  bool inherits_from = 20002;
+  bool inherits_from = 20200;
+  int32 fix_size = 20201;   // 生成固定长度的数组
 }
 
