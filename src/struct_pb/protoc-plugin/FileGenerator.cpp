@@ -82,7 +82,7 @@ IGUANA_INLINE void from_json_impl(Eigen::Quaternion<_Scalar>& value, It&& it, It
   iguana::from_json(*(_Scalar(*)[4]) & value, it, end);
 }
 
-})");
+}// namespace eigen)");
 
 }
 
@@ -99,8 +99,8 @@ void FileGenerator::generate_enum_helper(google::protobuf::io2::Printer *p) {
     for(int i = 0; i < msg->value_count();++i) {
       format("$1$, ", msg->value(i)->number());
     }
-    format("};\n};\n");
     format.outdent();
+    format("};\n};\n");
   }
 
   NamespaceOpener(p, "iguana").close();

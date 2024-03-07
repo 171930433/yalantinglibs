@@ -61,7 +61,7 @@ void MessageGenerator::generate_struct_definition(
   for (int i = 0; i < d_->field_count(); ++i) {
     auto fd = d_->field(i);
     if (fd->options().GetExtension(inherits_from)) {
-      parent = std::string(": public ") + fg_map_.get(fd).cpp_type_name();
+      parent +=  (i == 0 ? ":" : ",") + std::string(" public ") + fg_map_.get(fd).cpp_type_name();
     }
   }
 
