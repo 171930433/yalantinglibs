@@ -4,31 +4,11 @@ package inner_class;
 import "base.proto";
 import "proto_to_struct.proto";
 
-option(write_pcl_helper) = true;
 
-message PointXYZI
+
+message ZPointCloudXYZIT
 {
-    option(pcl_typename) = "pcl::PointXYZI";
-    repeated float data = 3 [(fix_size) = 4];        // data[0-2] x y z
-    repeated float data_c = 4 [(fix_size) = 4];      // data_c[0] intensity
-}
-
-message PclCloudXYZI
-{
-    option(pcl_typename) = "pcl::PointCloud<pcl::PointXYZI>";
-
-    repeated PointXYZI points = 1;
-    uint32 width = 2;
-    uint32 height = 3;
-    bool is_dense = 4;
-    Vector4f sensor_origin_ = 5;
-    Quaternionf sensor_orientation_ = 6;
-}
-
-message ZPointCloudXYZI
-{
-    ZFrame header = 1 [(inherits_from) = true];
-    // PclCloudXYZI point_cloud = 2 [(inherits_from) = true];
-    bytes points = 2;
+    ZFrame header = 1 ;
+    bytes pcl_compressed_pc = 2;    // pcl的压缩点云
 }
 

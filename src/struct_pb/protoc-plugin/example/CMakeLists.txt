@@ -24,9 +24,9 @@ if (Protobuf_FOUND)
     state.proto
     chasis.proto
     perception.proto
-    # pointcloud.proto
+    pointcloud.proto
     )
-    add_executable(struct_pb_tutorial tutorial.cpp           
+    add_executable(struct_pb_tutorial tutorial.cpp zpointcloud.cpp          
       ${PROTO_SRCS}
       ${PROTO_HDRS})
       target_link_libraries(struct_pb_tutorial protobuf::libprotobuf pcl_common pcl_io pcl_octree)
