@@ -31,4 +31,8 @@ if(CMAKE_PROJECT_NAME STREQUAL "yaLanTingLibs") # if ylt is top-level project
 endif()
 
 
-# add_subdirectory(src/struct_pb/protoc-plugin)
+# set(CMAKE_C_COMPILER gcc-9)
+# set(CMAKE_CXX_COMPILER g++-9)
+list(APPEND CMAKE_PREFIX_PATH "/home/gsk/pro/CyberRT/install/")
+
+add_subdirectory(src/struct_pb/protoc-plugin)
