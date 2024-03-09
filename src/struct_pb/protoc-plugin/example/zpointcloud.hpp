@@ -12,8 +12,13 @@
 
 namespace inner_struct {
 
+// template <typename _PointType>
+// struct ZPointCloud : public ZFrame, public pcl::PointCloud<_PointType> {
+
+// };
+
 template <typename _PointType>
-struct ZPointCloud : public ZFrame, public pcl::PointCloud<_PointType> {
+struct ZPointCloud :  public pcl::PointCloud<_PointType>, public ZFrame {
 
 };
 
