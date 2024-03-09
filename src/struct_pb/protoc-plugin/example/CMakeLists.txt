@@ -7,7 +7,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/output/examples)
 include(../cmake/struct_pb.cmake)
 
 cmake_policy(SET CMP0075 NEW)
-find_package(PCL REQUIRED package common)
+find_package(PCL REQUIRED package common io octree)
+# find_package(PCL REQUIRED )
 
 
 if (Protobuf_FOUND)
@@ -28,7 +29,10 @@ if (Protobuf_FOUND)
     add_executable(struct_pb_tutorial tutorial.cpp           
       ${PROTO_SRCS}
       ${PROTO_HDRS})
-      target_link_libraries(struct_pb_tutorial protobuf::libprotobuf pcl_common)
+      target_link_libraries(struct_pb_tutorial protobuf::libprotobuf pcl_common pcl_io pcl_octree)
+      # target_link_libraries(struct_pb_tutorial protobuf::libprotobuf ${PCL_LIBRARIES})
+
+      
 
     target_include_directories(struct_pb_tutorial PUBLIC 
       ${CMAKE_CURRENT_BINARY_DIR}
