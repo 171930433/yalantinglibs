@@ -1,0 +1,12 @@
+syntax = "proto3";
+package inner_class;
+
+import "base.proto";
+import "proto_to_struct.proto";
+
+message ZImage
+{
+    ZFrame header = 1 ;
+    bytes cv_compressed_image = 2;    // pcl的压缩点云
+}
+
