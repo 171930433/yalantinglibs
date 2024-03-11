@@ -1,10 +1,18 @@
 cmake_minimum_required(VERSION 3.10)
+
+set(CMAKE_C_COMPILER gcc-9)
+set(CMAKE_CXX_COMPILER g++-9)
+set(CMAKE_CXX_STANDARD 17)
+
 project(yaLanTingLibs
         VERSION 0.2.9
         DESCRIPTION "yaLanTingLibs"
         HOMEPAGE_URL "https://github.com/alibaba/yalantinglibs"
         LANGUAGES CXX
         )
+
+
+
 
 # load pack finder
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Find/)
@@ -31,4 +39,4 @@ if(CMAKE_PROJECT_NAME STREQUAL "yaLanTingLibs") # if ylt is top-level project
 endif()
 
 
-# add_subdirectory(src/struct_pb/protoc-plugin)
+add_subdirectory(src/struct_pb/protoc-plugin)
