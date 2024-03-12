@@ -124,7 +124,8 @@ function(protobuf_generate_modified)
 
         add_custom_command(
                 OUTPUT ${_generated_srcs}
-                COMMAND  protobuf::protoc
+                #!!!!!!!!!!!!!!!!!!!! 设置环境变量并执行
+                COMMAND ${CMAKE_COMMAND} -E env "PATH=$ENV{PATH}:${CMAKE_BINARY_DIR}/output/bin/" protoc
                 ARGS --${protobuf_generate_LANGUAGE}_out ${_opt}${protobuf_generate_PROTOC_OUT_DIR} ${_plugin} ${_dll_desc_out} ${_protobuf_include_path} ${_abs_file}
                 DEPENDS ${_abs_file} protobuf::protoc
                 COMMENT "Running ${protobuf_generate_LANGUAGE} protocol buffer compiler on ${_proto}"
