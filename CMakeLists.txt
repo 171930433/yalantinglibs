@@ -43,5 +43,5 @@ if(CMAKE_PROJECT_NAME STREQUAL "yaLanTingLibs") # if ylt is top-level project
 endif()
 
 
-add_subdirectory(src/struct_pb/protoc-plugin)
-# add_subdirectory(src/example)
+# add_subdirectory(src/struct_pb/protoc-plugin)
+add_subdirectory(src/example)

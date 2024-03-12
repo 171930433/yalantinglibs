@@ -1,7 +1,7 @@
 syntax = "proto3";
 package inner_class;
 
-import "../struct_pb/protoc-plugin/proto_to_struct.proto";
+import "proto_to_struct.proto";
 
 // import "google/protobuf/descriptor.proto";
 
