@@ -1,7 +1,10 @@
 syntax = "proto3";
 package inner_class;
 
-import "proto_to_struct.proto";
+import "../struct_pb/protoc-plugin/proto_to_struct.proto";
+
+// import "google/protobuf/descriptor.proto";
+
 
 option(write_eigen_helper) = true;
 

@@ -11,6 +11,10 @@ project(yaLanTingLibs
         LANGUAGES CXX
         )
 
+find_package(Protobuf REQUIRED)
+
+# 将插件目录添加到环境变量
+execute_process(COMMAND export PATH=$PATH:${CMAKE_BINARY_DIR}/output/bin/)
 
 
 
@@ -40,3 +44,4 @@ endif()
 
 
 add_subdirectory(src/struct_pb/protoc-plugin)
+# add_subdirectory(src/example)
