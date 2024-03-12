@@ -4,7 +4,9 @@ add_compile_options(-Wno-attributes)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/output/examples)
 
-include(../cmake/struct_pb.cmake)
+
+set(protobuf_generate_PLUGIN "protoc-gen-struct_pb")
+include(cmake/struct_pb.cmake)
 
 cmake_policy(SET CMP0075 NEW)
 find_package(PCL REQUIRED COMPONENTS common io)
@@ -27,24 +29,8 @@ if (Protobuf_FOUND)
     pointcloud.proto
     image.proto
     )
-    add_executable(struct_pb_tutorial tutorial.cpp zpointcloud.cpp zimage.cpp     
-      ${PROTO_SRCS}
-      ${PROTO_HDRS})
-      target_link_libraries(struct_pb_tutorial protobuf::libprotobuf 
-        pcl_common pcl_io # pcl
-        opencv_imgcodecs opencv_core  # opencv
-      )
 
-      
-
-    target_include_directories(struct_pb_tutorial PUBLIC 
-      ${CMAKE_CURRENT_BINARY_DIR}
-      ${CMAKE_CURRENT_LIST_DIR}
-      ${PCL_INCLUDE_DIRS}
-      ${OPENCV_INCLUDE_DIRS}
-      )
-
-    target_protos_struct_pb(struct_pb_tutorial PRIVATE 
+    protobuf_generate_struct_pb(PROTO_STRUCT_SRCS PROTO_STRUCT_HDRS
     # addressbook.proto  
     base.proto
     imu.proto
@@ -54,5 +40,23 @@ if (Protobuf_FOUND)
     perception.proto
     # pointcloud.proto
     OPTION "namespace=inner_struct,converter_namespace=converter")
+
+
+    add_executable(struct_pb_tutorial tutorial.cpp           
+      ${PROTO_SRCS}
+      ${PROTO_HDRS}
+      ${PROTO_STRUCT_SRCS}
+      ${PROTO_STRUCT_HDRS}
+    )
+
+    target_link_libraries(struct_pb_tutorial protobuf::libprotobuf pcl_common)
+
+    target_include_directories(struct_pb_tutorial PUBLIC 
+      ${CMAKE_CURRENT_BINARY_DIR}
+      ${CMAKE_CURRENT_LIST_DIR}
+      ${PCL_INCLUDE_DIRS}
+    )
+
+
 
 endif()

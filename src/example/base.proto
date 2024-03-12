@@ -3,6 +3,9 @@ package inner_class;
 
 import "proto_to_struct.proto";
 
+// import "google/protobuf/descriptor.proto";
+
+
 option(write_eigen_helper) = true;
 
 enum  ZFrameType{
