@@ -10,6 +10,9 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/impl/pcd_io.hpp>
 
+namespace zhito{
+
+
 namespace inner_struct {
 
 template <typename _PointType>
@@ -17,13 +20,13 @@ struct ZPointCloud : public ZFrame, public pcl::PointCloud<_PointType> {
 
 };
 
-using ZPointCloudXYZIT = ::inner_struct::ZPointCloud<pcl::PointXYZIT>;
-using spZPointCloudXYZIT = std::shared_ptr<::inner_struct::ZPointCloudXYZIT>;
-using sp_cZPointCloudXYZIT = std::shared_ptr<::inner_struct::ZPointCloudXYZIT const>;
+using ZPointCloudXYZIT = ::zhito::inner_struct::ZPointCloud<pcl::PointXYZIT>;
+using spZPointCloudXYZIT = std::shared_ptr<::zhito::inner_struct::ZPointCloudXYZIT>;
+using sp_cZPointCloudXYZIT = std::shared_ptr<::zhito::inner_struct::ZPointCloudXYZIT const>;
 
 
 template <typename _PointType>
-inline std::ostream& operator<<(std::ostream& os,::inner_struct::ZPointCloud<_PointType> const& in)
+inline std::ostream& operator<<(std::ostream& os,::zhito::inner_struct::ZPointCloud<_PointType> const& in)
 {
     os << (ZFrame&)in << std::endl;
     os << (pcl::PointCloud<_PointType>&)in << std::endl;
@@ -36,10 +39,12 @@ inline std::ostream& operator<<(std::ostream& os,::inner_struct::ZPointCloud<_Po
 namespace converter {
 // StructToClass declaration
 
-::inner_class::ZPointCloudXYZIT StructToClass(inner_struct::sp_cZPointCloudXYZIT const& in);
+::zhito::inner_class::ZPointCloudXYZIT StructToClass(inner_struct::sp_cZPointCloudXYZIT const& in);
 // enum
 
 // ClassToStruct declaration
-::inner_struct::spZPointCloudXYZIT ClassToStruct(::inner_class::ZPointCloudXYZIT const& in);
+::zhito::inner_struct::spZPointCloudXYZIT ClassToStruct(::zhito::inner_class::ZPointCloudXYZIT const& in);
 
 } // namespace converter
+
+} // namespace zhito

@@ -5,11 +5,8 @@ cmake_minimum_required(VERSION 3.10)
 
 project(protoc-gen-struct_pb)
 
-
-# add_subdirectory(example)
-
-
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/output/bin)
+
 find_package(Protobuf QUIET)
 if (Protobuf_FOUND)
 

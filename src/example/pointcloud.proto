@@ -1,10 +1,7 @@
 syntax = "proto3";
-package inner_class;
+package zhito.inner_class;
 
 import "base.proto";
-import "proto_to_struct.proto";
-
-
 
 message ZPointCloudXYZIT
 {

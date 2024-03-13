@@ -4,46 +4,33 @@ add_compile_options(-Wno-attributes)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/output/examples)
 
-include(cmake/struct_pb.cmake)
+# protobuf_generate_struct_pb 函数
+include(${struct_pb_plugin_DIRS}/cmake/struct_pb.cmake)
 
-cmake_policy(SET CMP0075 NEW)
 find_package(PCL REQUIRED COMPONENTS common io)
 find_package(OpenCV REQUIRED COMPONENTS core)
 
+file(GLOB PROTO_FILES "*.proto")
+
 # generate .pb.cc .pb.h
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
-  ../protoc-plugin/proto_to_struct.proto
-  base.proto
-  imu.proto
-  gnss.proto
-  state.proto
-  chasis.proto
-  perception.proto
-  pointcloud.proto
-  image.proto
+  ${struct_pb_plugin_DIRS}/proto_to_struct.proto
+  ${PROTO_FILES}
 )
 
-  
 protobuf_generate_python(PROTO_PYTHON_SRCS
-  ../protoc-plugin/proto_to_struct.proto
-  base.proto
-  imu.proto
-  gnss.proto
-  state.proto
-  chasis.proto
-  perception.proto
-  pointcloud.proto
-  image.proto  
+  ${struct_pb_plugin_DIRS}/proto_to_struct.proto
+  ${PROTO_FILES}
 )
+
+# 删除点云,图片proto记录文件
+list(FILTER PROTO_FILES EXCLUDE REGEX "pointcloud\\.proto$|image\\.proto$")
+message(status "-------${PROTO_FILES}-------")
+
 
 protobuf_generate_struct_pb(PROTO_STRUCT_SRCS PROTO_STRUCT_HDRS
-base.proto
-imu.proto
-gnss.proto
-state.proto
-chasis.proto
-perception.proto
-OPTION "namespace=inner_struct,converter_namespace=converter")
+  ${PROTO_FILES}
+OPTION "namespace=zhito.inner_struct,converter_namespace=zhito.converter")
 
 add_executable(struct_pb_tutorial tutorial.cpp 
   zpointcloud.cpp zimage.cpp

@@ -1,5 +1,5 @@
 syntax = "proto3";
-package inner_class;
+package zhito.inner_class;
 
 import "proto_to_struct.proto";
 import "base.proto";

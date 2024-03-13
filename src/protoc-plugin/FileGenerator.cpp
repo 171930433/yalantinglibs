@@ -426,15 +426,15 @@ void FileGenerator::generate_message_struct2class_definitions(
   std::vector<const Descriptor *> msgs = flatten_messages_in_file(file_);
   for (auto msg : msgs) {
     auto struct_name = qualified_class_name(msg, options_);
-    auto class_name = "::" + file_->package() + "::" + msg->name();
+    auto class_name = "::" + dots_to_colons(file_->package()) + "::" + msg->name();
     format("$1$ StructToClass($2$ const& in);\n",class_name,struct_name);
   }
   // enum
-  format("// enum\n");
+  format("\n// enum\n");
   std::vector<const EnumDescriptor *> enums = flatten_enums_in_file(file_);
   for (auto msg : enums) {
     auto struct_name = qualified_enum_name(msg, options_);
-    auto class_name = "::" + file_->package() + "::" + msg->name();
+    auto class_name = "::" + dots_to_colons(file_->package()) + "::" + msg->name();
     format("$1$ StructToClass($2$ const& in);\n", class_name, struct_name);
   }
 
@@ -447,15 +447,15 @@ void FileGenerator::generate_message_class2struct_definitions(
   std::vector<const Descriptor *> msgs = flatten_messages_in_file(file_);
   for (auto msg : msgs) {
     auto struct_name = qualified_class_name(msg, options_);
-    auto class_name = "::" + file_->package() + "::" + msg->name();
+    auto class_name = "::" + dots_to_colons(file_->package()) + "::" + msg->name();
     format("$1$ ClassToStruct($2$ const& in);\n",struct_name, class_name);
   }
   // enum
-  format("// enum\n");
+  format("\n// enum\n");
   std::vector<const EnumDescriptor *> enums = flatten_enums_in_file(file_);
   for (auto msg : enums) {
     auto struct_name = qualified_enum_name(msg, options_);
-    auto class_name = "::" + file_->package() + "::" + msg->name();
+    auto class_name = "::" + dots_to_colons(file_->package()) + "::" + msg->name();
     format("$1$ ClassToStruct($2$ const& in);\n", struct_name, class_name);
   }
   format("\n");
@@ -467,7 +467,7 @@ void FileGenerator::generate_message_to_string_definitions(
   std::vector<const Descriptor *> msgs = flatten_messages_in_file(file_);
   for (auto msg : msgs) {
     auto struct_name = qualified_class_name(msg, options_);
-    auto class_name = "::" + file_->package() + "::" + msg->name();
+    auto class_name = "::" + dots_to_colons(file_->package()) + "::" + msg->name();
     // 非eigen 类型增加tostring
     if (msg->options().GetExtension(eigen_typename).empty()) {
       format("std::ostream& operator<<(std::ostream& os,$1$ const& in);\n",
@@ -484,7 +484,7 @@ void FileGenerator::generate_message_struct2class_source(
   for (auto msg : msgs) {
     MessageGenerator g(msg, options_);
     auto struct_name = qualified_class_name(msg, options_);
-    auto class_name = "::" + file_->package() + "::" + msg->name();
+    auto class_name = "::" + dots_to_colons(file_->package()) + "::" + msg->name();
     format("$1$ StructToClass($2$ const& in) {\n",class_name,struct_name);
     format.indent();
     format("$1$ result;\n",class_name);
@@ -498,7 +498,7 @@ void FileGenerator::generate_message_struct2class_source(
   std::vector<const EnumDescriptor *> enums = flatten_enums_in_file(file_);
   for (auto msg : enums) {
     auto struct_name = qualified_enum_name(msg, options_);
-    auto class_name = "::" + file_->package() + "::" + msg->name();
+    auto class_name = "::" + dots_to_colons(file_->package()) + "::" + msg->name();
     format("$1$ StructToClass($2$ const& in) { return $1$(int(in));}\n", class_name, struct_name);
   }
 }
@@ -510,7 +510,7 @@ void FileGenerator::generate_message_class2struct_source(
   for (auto msg : msgs) {
     MessageGenerator g(msg, options_);
     auto struct_name = qualified_class_name(msg, options_);
-    auto class_name = "::" + file_->package() + "::" + msg->name();
+    auto class_name = "::" + dots_to_colons(file_->package()) + "::" + msg->name();
     format("$1$ ClassToStruct($2$ const& in) {\n",struct_name, class_name);
     format.indent();
     format("$1$ result;\n",struct_name);
@@ -523,7 +523,7 @@ void FileGenerator::generate_message_class2struct_source(
   std::vector<const EnumDescriptor *> enums = flatten_enums_in_file(file_);
   for (auto msg : enums) {
     auto struct_name = qualified_enum_name(msg, options_);
-    auto class_name = "::" + file_->package() + "::" + msg->name();
+    auto class_name = "::" + dots_to_colons(file_->package()) + "::" + msg->name();
     format("$1$ ClassToStruct($2$ const& in) { return $1$(int(in));}\n", struct_name, class_name);
   }
 }
@@ -540,7 +540,7 @@ void FileGenerator::generate_message_tostring_source(
     }
     MessageGenerator g(msg, options_);
     auto struct_name = qualified_class_name(msg, options_);
-    auto class_name = "::" + file_->package() + "::" + msg->name();
+    auto class_name = "::" + dots_to_colons(file_->package()) + "::" + msg->name();
 
     p->Print({{"struct_name",struct_name}},
   R"(std::ostream& operator<<(std::ostream& os, $struct_name$ const& in) {

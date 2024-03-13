@@ -9,6 +9,7 @@
 #include "zpointcloud.hpp"
 
 void PointcloudDemo() {
+  using namespace zhito;
   pcl::PointXYZIT p2{1, 2};
 
   inner_struct::spZPointCloudXYZIT pc = std::make_shared<inner_struct::ZPointCloudXYZIT>();
@@ -28,6 +29,8 @@ void PointcloudDemo() {
 }
 
 void ImuDemo() {
+  using namespace zhito;
+
   inner_struct::ZImu imu1{1, 2, 3, inner_struct::ZFrameType::IMU, "channel_name", {4, 5, 6}, {7, 8, 9}, 10};
   inner_class::ZImu imu2 = converter::StructToClass(imu1);
   inner_struct::ZImu imu3 = converter::ClassToStruct(imu2);
@@ -38,6 +41,8 @@ void ImuDemo() {
 }
 
 void ImageDemo() {
+  using namespace zhito;
+
   inner_struct::ZImage image1{1, 2, 3, inner_struct::ZFrameType::CvImage, "/zhito/image"};
   (cv::Mat&)image1 = cv::Mat::eye(4, 4, CV_64F);
 

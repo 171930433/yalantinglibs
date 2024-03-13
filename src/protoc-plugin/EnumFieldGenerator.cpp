@@ -331,7 +331,7 @@ void EnumFieldGenerator::generate_struct_to_class(
   // p->Print({{"name", d_->name()}}, "j[\"$name$\"] = t.$name$;\n");
 
   std::string raw_name = d_->name();
-  std::string class_name = d_->file()->package() + "::" + d_->enum_type()->name();
+  std::string class_name = "::" + dots_to_colons(d_->file()->package()) + "::" + d_->enum_type()->name();
 
   format("result.set_$1$($2$(int(in.$1$)));\n", name(), class_name);
 }
