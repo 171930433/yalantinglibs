@@ -42,5 +42,11 @@ if(CMAKE_PROJECT_NAME STREQUAL "yaLanTingLibs") # if ylt is top-level project
 endif()
 
 
+set(Protobuf_IMPORT_DIRS 
+${CMAKE_CURRENT_LIST_DIR}/src/protoc-plugin
+)
+
+
+
 # add_subdirectory(src/protoc-plugin)
 add_subdirectory(src/example)

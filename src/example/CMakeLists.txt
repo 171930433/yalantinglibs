@@ -12,20 +12,20 @@ find_package(OpenCV REQUIRED COMPONENTS core)
 
 # generate .pb.cc .pb.h
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
-proto_to_struct.proto
-base.proto
-imu.proto
-gnss.proto
-state.proto
-chasis.proto
-perception.proto
-pointcloud.proto
-image.proto
+  ../protoc-plugin/proto_to_struct.proto
+  base.proto
+  imu.proto
+  gnss.proto
+  state.proto
+  chasis.proto
+  perception.proto
+  pointcloud.proto
+  image.proto
 )
 
   
 protobuf_generate_python(PROTO_PYTHON_SRCS
-  proto_to_struct.proto
+  ../protoc-plugin/proto_to_struct.proto
   base.proto
   imu.proto
   gnss.proto
@@ -45,7 +45,8 @@ chasis.proto
 perception.proto
 OPTION "namespace=inner_struct,converter_namespace=converter")
 
-add_executable(struct_pb_tutorial tutorial.cpp zpointcloud.cpp zimage.cpp
+add_executable(struct_pb_tutorial tutorial.cpp 
+  zpointcloud.cpp zimage.cpp
   ${PROTO_SRCS}
   ${PROTO_HDRS}
   ${PROTO_STRUCT_SRCS}
@@ -59,6 +60,7 @@ target_link_libraries(struct_pb_tutorial protobuf::libprotobuf
 )
 
 target_include_directories(struct_pb_tutorial PUBLIC 
+  ${CMAKE_BINARY_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${CMAKE_CURRENT_LIST_DIR}
   ${PCL_INCLUDE_DIRS}
