@@ -2,7 +2,7 @@
 
 #include <pcl/point_cloud.h>
 
-#include "base.struct_pb.h"
+#include "zframe.struct_pb.h"
 #include "pointcloud.pb.h"
 #include "xyzit_points.hpp"
 

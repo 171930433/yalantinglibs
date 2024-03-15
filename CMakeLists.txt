@@ -47,5 +47,5 @@ set(struct_pb_plugin_DIRS ${CMAKE_CURRENT_LIST_DIR}/src/protoc-plugin)  # struct
 set(Protobuf_IMPORT_DIRS ${struct_pb_plugin_DIRS} )     # 设置protoc --proto_path参数
 
 
-add_subdirectory(src/protoc-plugin)
+# add_subdirectory(src/protoc-plugin)
 add_subdirectory(src/example)

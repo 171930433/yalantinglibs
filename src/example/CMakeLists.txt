@@ -25,7 +25,7 @@ protobuf_generate_python(PROTO_PYTHON_SRCS
 
 # 删除点云,图片proto记录文件
 list(FILTER PROTO_FILES EXCLUDE REGEX "pointcloud\\.proto$|image\\.proto$")
-message(status "-------${PROTO_FILES}-------")
+# message(status "-------${PROTO_FILES}-------")
 
 
 protobuf_generate_struct_pb(PROTO_STRUCT_SRCS PROTO_STRUCT_HDRS

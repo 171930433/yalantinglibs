@@ -2,7 +2,7 @@
 
 #include <pcl/point_cloud.h>
 
-#include "base.struct_pb.h"
+#include "zframe.struct_pb.h"
 #include "image.pb.h"
 
 #include <opencv2/core.hpp>
