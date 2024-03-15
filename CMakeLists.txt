@@ -44,7 +44,7 @@ endif()
 
 # 指定struct_pb库目录
 set(struct_pb_plugin_DIRS ${CMAKE_CURRENT_LIST_DIR}/src/protoc-plugin)  # struct_pb_plugin_DIRS 将指定 proto_to_struct.proto,struct_pb.cmake等目录
-set(Protobuf_IMPORT_DIRS ${struct_pb_plugin_DIRS} )     # 设置protoc --proto_path参数
+set(Protobuf_IMPORT_DIRS ${CMAKE_SOURCE_DIR})     # 设置protoc --proto_path参数
 
 
 # add_subdirectory(src/protoc-plugin)

@@ -1,10 +1,9 @@
 syntax = "proto3";
 package zhito.inner_class;
 
-import "zframe.proto";
-import "base.proto";
+import "src/example/zframe.proto";
+import "src/example/base.proto";
 import "proto_to_struct.proto";
-
 message ZState{
    ZFrame header = 1 [(inherits_from) = true];
    Vector3d pos = 2;//位置: X Y Z
