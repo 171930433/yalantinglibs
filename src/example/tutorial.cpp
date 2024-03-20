@@ -19,12 +19,9 @@ void PointcloudDemo() {
     p2.x += (rand() % 10000 * 0.0001);
     pc->push_back(p2);
   }
-std::cout<< "11111111111\n";
   inner_class::ZPointCloudXYZIT pc2 = converter::StructToClass(pc);
-std::cout<< "2222222222222\n";
 
   inner_struct::spZPointCloudXYZIT pc3 = converter::ClassToStruct(pc2);
-std::cout<< "33333\n";
 
   // pcl::io::savePCDFileBinaryCompressed("1.pcd", *pc3);
 
