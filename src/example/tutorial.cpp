@@ -4,9 +4,9 @@
 #include <string>
 
 // #include "addressbook.struct_pb.h"
-// #include "imu.struct_pb.h"
-// #include "zimage.hpp"
-// #include "zpointcloud.hpp"
+#include "src/example/message/imu.struct_pb.h"
+// #include "src/message/zimage.hpp"
+// #include "src/message/zpointcloud.hpp"
 
 // void PointcloudDemo() {
 //   using namespace zhito;
@@ -28,17 +28,17 @@
 //   std::cout << *pc3 << std::endl;
 // }
 
-// void ImuDemo() {
-//   using namespace zhito;
+void ImuDemo() {
+  using namespace zhito;
 
-//   inner_struct::ZImu imu1{1, 2, 3, inner_struct::ZFrameType::IMU, "channel_name", {4, 5, 6}, {7, 8, 9}, 10};
-//   inner_class::ZImu imu2 = converter::StructToClass(imu1);
-//   inner_struct::ZImu imu3 = converter::ClassToStruct(imu2);
+  inner_struct::ZImu imu1{1, 2, 3, inner_struct::ZFrameType::IMU, "channel_name", {4, 5, 6}, {7, 8, 9}, 10};
+  inner_class::ZImu imu2 = converter::StructToClass(imu1);
+  inner_struct::ZImu imu3 = converter::ClassToStruct(imu2);
 
-//   std::cout << imu1 << std::endl;
-//   std::cout << imu2.ShortDebugString() << std::endl;
-//   std::cout << imu3 << std::endl;
-// }
+  std::cout << imu1 << std::endl;
+  std::cout << imu2.ShortDebugString() << std::endl;
+  std::cout << imu3 << std::endl;
+}
 
 // void ImageDemo() {
 //   using namespace zhito;
@@ -55,7 +55,7 @@
 // }
 
 int main() {
-  // ImuDemo();
+  ImuDemo();
   // PointcloudDemo();
   // ImageDemo();
 
