@@ -8,7 +8,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/output/examples)
 
 # protobuf_generate_struct_pb 函数
 set(struct_pb_plugin_DIRS ${CMAKE_SOURCE_DIR}/src/protoc-plugin)  # struct_pb_plugin_DIRS 将指定 proto_to_struct.proto,struct_pb.cmake等目录
-set(Protobuf_IMPORT_DIRS ${CMAKE_SOURCE_DIR} ${struct_pb_plugin_DIRS} ${CMAKE_CURRENT_LIST_DIR})     # 设置protoc --proto_path参数
+set(Protobuf_IMPORT_DIRS  ${struct_pb_plugin_DIRS} ${CMAKE_CURRENT_LIST_DIR})     # 设置protoc --proto_path参数
 include(${struct_pb_plugin_DIRS}/cmake/struct_pb.cmake)
 
 find_package(PCL REQUIRED COMPONENTS common io)
@@ -31,7 +31,6 @@ protobuf_generate_python(PROTO_PYTHON_SRCS
 protobuf_generate_struct_pb(PROTO_STRUCT_SRCS PROTO_STRUCT_HDRS
   ${PROTO_FILES}
 OPTION "namespace=zhito.inner_struct,converter_namespace=zhito.converter"
-# PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 
