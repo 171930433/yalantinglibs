@@ -21,13 +21,11 @@ file(GLOB PROTO_FILES "*.proto")
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
   ${struct_pb_plugin_DIRS}/proto_to_struct.proto
   ${PROTO_FILES}
-  # IMPORT_DIRS ${CMAKE_SOURCE_DIR}
 )
 
 protobuf_generate_python(PROTO_PYTHON_SRCS
   ${struct_pb_plugin_DIRS}/proto_to_struct.proto
   ${PROTO_FILES}
-  # IMPORT_DIRS ${CMAKE_SOURCE_DIR}
 )
 
 protobuf_generate_struct_pb(PROTO_STRUCT_SRCS PROTO_STRUCT_HDRS
@@ -36,7 +34,8 @@ OPTION "namespace=zhito.inner_struct,converter_namespace=zhito.converter"
 # PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-add_executable(struct_pb_tutorial tutorial.cpp 
+
+add_library(proto_common OBJECT
   ${PROTO_SRCS}
   ${PROTO_HDRS}
   ${PROTO_STRUCT_SRCS}
@@ -44,13 +43,9 @@ add_executable(struct_pb_tutorial tutorial.cpp
   ${PROTO_PYTHON_SRCS}
 )
 
-target_link_libraries(struct_pb_tutorial protobuf::libprotobuf 
-  pcl_common pcl_io # pcl
-  opencv_imgcodecs opencv_core  # opencv
-  $ENV{proto_message}
-)
+target_link_libraries(proto_common protobuf::libprotobuf )
 
-target_include_directories(struct_pb_tutorial PUBLIC 
+target_include_directories(proto_common PUBLIC 
   ${CMAKE_BINARY_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${CMAKE_CURRENT_LIST_DIR}
@@ -58,5 +53,19 @@ target_include_directories(struct_pb_tutorial PUBLIC
   ${OpenCV_INCLUDE_DIRS}
   ${CMAKE_BINARY_DIR}/src/protoc-plugin
 )
+
+
+add_executable(struct_pb_tutorial tutorial.cpp )
+
+target_link_libraries(struct_pb_tutorial 
+  proto_common
+  $ENV{proto_message}
+)
+
+target_include_directories(struct_pb_tutorial PUBLIC 
+  ${CMAKE_BINARY_DIR}
+  ${CMAKE_SOURCE_DIR}
+)
+
 
 add_subdirectory(message)

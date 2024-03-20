@@ -119,7 +119,7 @@ function(protobuf_generate_modified)
 
 
         # message(status _out!!!!!!!!${protobuf_generate_LANGUAGE}_out})
-        message(status _opt!!!!!!!!${_opt}${protobuf_generate_PROTOC_OUT_DIR})
+        # message(status _opt!!!!!!!!${_opt}${protobuf_generate_PROTOC_OUT_DIR})
 
 
         add_custom_command(

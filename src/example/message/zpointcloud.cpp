@@ -33,8 +33,10 @@ zhito::inner_struct::spZPointCloudXYZIT ClassToStruct(::zhito::inner_class::ZPoi
   *(std::shared_ptr<::zhito::inner_struct::ZFrame>)result = ClassToStruct(in.header());
   // 解压点云
   std::stringstream compressed_pcl_pointcloud(in.pcl_compressed_pc());
+  // std::cout <<" compressed_pcl_pointcloud size = " << compressed_pcl_pointcloud.str().size() << "\n";
   // decodePointCloud 的参数定义成了智能指针的引用, 所以不能存在转换. 只有是 const T& 和 std::shared_ptr<T>, 可以使用多态,即直接使用子类对象或者子类智能指针
   s_compress.decodePointCloud(compressed_pcl_pointcloud, (pcl::PointCloud<pcl::PointXYZIT>::Ptr&)result);
+  // std::cout <<" compressed_pcl_pointcloud size = " << compressed_pcl_pointcloud.str().size() << " done \n";
 
   return result;
 }
