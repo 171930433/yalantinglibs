@@ -2,9 +2,9 @@
 
 #include <pcl/point_cloud.h>
 
-#include "zframe.struct_pb.h"
-#include "pointcloud.pb.h"
-#include "xyzit_points.hpp"
+#include "src/example/message/zframe.struct_pb.h"
+#include "src/example/message/pointcloud.pb.h"
+#include "src/example/message/xyzit_points.hpp"
 
 // save to file
 #include <pcl/io/pcd_io.h>

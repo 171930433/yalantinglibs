@@ -1,4 +1,4 @@
-#include "zpointcloud.hpp"
+#include "src/example/message/zpointcloud.hpp"
 
 #include <pcl/compression/octree_pointcloud_compression.h>
 #include <pcl/octree/octree_pointcloud.h>

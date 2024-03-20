@@ -2,8 +2,8 @@
 
 #include <pcl/point_cloud.h>
 
-#include "zframe.struct_pb.h"
-#include "image.pb.h"
+#include "src/example/message/zframe.struct_pb.h"
+#include "src/example/message/image.pb.h"
 
 #include <opencv2/core.hpp>
 

@@ -1,4 +1,4 @@
-#include "zimage.hpp"
+#include "src/example/message/zimage.hpp"
 
 #include <opencv2/imgcodecs.hpp>
 #include <string_view>

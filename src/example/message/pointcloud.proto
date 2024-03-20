@@ -2,8 +2,8 @@ syntax = "proto3";
 package zhito.inner_class;
 
 import "zframe.proto";
-import "base.proto";
-import "proto_to_struct.proto";
+// import "base.proto";
+// import "proto_to_struct.proto";
 message ZPointCloudXYZIT
 {
     ZFrame header = 1 ;

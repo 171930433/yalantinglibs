@@ -1,5 +1,6 @@
 
 set(ENV{proto_message} "proto_message")
+set(ENV{struct_pb_options} "namespace=zhito.inner_struct,converter_namespace=zhito.converter")
 
 # 设置编译器选项
 add_compile_options(-Wno-attributes)
@@ -30,27 +31,21 @@ protobuf_generate_python(PROTO_PYTHON_SRCS
 
 protobuf_generate_struct_pb(PROTO_STRUCT_SRCS PROTO_STRUCT_HDRS
   ${PROTO_FILES}
-OPTION "namespace=zhito.inner_struct,converter_namespace=zhito.converter"
+OPTION $ENV{struct_pb_options}
 )
 
 
 add_library(proto_common OBJECT
-  ${PROTO_SRCS}
-  ${PROTO_HDRS}
+  ${PROTO_SRCS}  
   ${PROTO_STRUCT_SRCS}
-  ${PROTO_STRUCT_HDRS}
   ${PROTO_PYTHON_SRCS}
 )
 
 target_link_libraries(proto_common protobuf::libprotobuf )
 
 target_include_directories(proto_common PUBLIC 
-  ${CMAKE_BINARY_DIR}
-  ${CMAKE_CURRENT_BINARY_DIR}
-  ${CMAKE_CURRENT_LIST_DIR}
-  ${PCL_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
-  ${CMAKE_BINARY_DIR}/src/protoc-plugin
+  ${CMAKE_CURRENT_LIST_DIR} # base.h
+  ${CMAKE_BINARY_DIR}/src/protoc-plugin # proto_to_struct.h
 )
 
 
