@@ -13,38 +13,14 @@ project(yaLanTingLibs
 
 
 # set(SYSROOT_DIR /opt/zhito/sysroot)
-set(CMAKE_PREFIX_PATH /home/gsk/pro/CyberRT/install/)
+set(CMAKE_PREFIX_PATH "/home/gsk/pro/ubuntu2204_docker")
 
 find_package(Protobuf REQUIRED)
 
-# load pack finder
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Find/)
+add_subdirectory(src/protoc-plugin)
 
-find_package(Threads REQUIRED)
-link_libraries(Threads::Threads)
+option(BUILD_EXAMPLES OFF)
 
-include(cmake/install.cmake)
-
-if(CMAKE_PROJECT_NAME STREQUAL "yaLanTingLibs") # if ylt is top-level project
-        # add include path
-        # include_directories(include)
-        # include_directories(include/ylt/thirdparty)
-        # include_directories(src/include)
-
-        # include(cmake/utils.cmake)
-        # include(cmake/struct_pb.cmake)
-        # include(cmake/build.cmake)
-        # include(cmake/develop.cmake)
-        # # add project config, such as enable_ssl.
-        # include(cmake/config.cmake)
-        # # add project's source such as unit test, example & benchmark
-        # include(cmake/subdir.cmake)
+if(BUILD_EXAMPLES)
+  add_subdirectory(src/example)
 endif()
-
-
-# 指定struct_pb库目录
-
-
-
-# add_subdirectory(src/protoc-plugin)
-add_subdirectory(src/example)
