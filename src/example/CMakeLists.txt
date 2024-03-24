@@ -22,7 +22,7 @@ file(GLOB_RECURSE PROTO_FILES "*.proto")
 #    "/home/gsk/pro/yalantinglibs/src/example/message/imu.proto" )
 
 
-protobuf_generate(
+protobuf_generate_modified(
   LANGUAGE cpp
   OUT_VAR PROTO_CLASS_SRCS
   IMPORT_DIRS ${CMAKE_SOURCE_DIR}
@@ -31,7 +31,7 @@ protobuf_generate(
 )
 
 
-protobuf_generate(
+protobuf_generate_modified(
   LANGUAGE python
   OUT_VAR PROTO_PYTHON_SRCS
   IMPORT_DIRS ${CMAKE_SOURCE_DIR}

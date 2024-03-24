@@ -5,7 +5,7 @@
 #include "google/protobuf/descriptor.h"
 
 // added
-#include "proto_to_struct.pb.h"
+#include "src/protoc-plugin/proto_to_struct.pb.h"
 
 struct Options {
   Options(const google::protobuf::FileDescriptor* f) : f(f) {}
