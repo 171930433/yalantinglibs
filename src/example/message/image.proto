@@ -1,7 +1,7 @@
 syntax = "proto3";
 package zhito.inner_class;
 
-import "zframe.proto";
+import "src/example/message/zframe.proto";
 
 message ZImage
 {

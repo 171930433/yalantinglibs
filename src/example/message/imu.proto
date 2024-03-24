@@ -1,9 +1,9 @@
 syntax = "proto3";
 package zhito.inner_class;
 
-import "zframe.proto";
-import "base.proto";
-import "proto_to_struct.proto";
+import "src/example/message/zframe.proto";
+import "src/example/base.proto";
+import "src/protoc-plugin/proto_to_struct.proto";
 message ZImu
 {
     ZFrame header = 1 [(inherits_from) = true];

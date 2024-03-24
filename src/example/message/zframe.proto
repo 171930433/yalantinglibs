@@ -1,8 +1,8 @@
 syntax = "proto3";
 package zhito.inner_class;
 
-// import "base.proto";
-// import "proto_to_struct.proto";
+// import "src/example/base.proto";
+// import "src/protoc-plugin/proto_to_struct.proto";
 enum  ZFrameType{
      None = 0;
      VEHICLE_MODEL = 1;  // 车辆运动约束虚拟帧
