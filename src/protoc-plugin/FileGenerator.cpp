@@ -215,7 +215,7 @@ void FileGenerator::generate_dependency_includes(
   for (int i = 0; i < file_->dependency_count(); ++i) {
     auto dep = file_->dependency(i);
     std::string basename = strip_proto(dep->name());
-    if(basename == "proto_to_struct") {continue;}
+    if(basename.find("proto_to_struct") != std::string::npos) {continue;}
     std::string header_name = basename + ".struct_pb.h";
     format("#include \"$1$\"\n", header_name);
     //

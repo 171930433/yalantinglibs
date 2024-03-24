@@ -82,7 +82,7 @@ function(protobuf_generate_modified)
             endif()
         endforeach()
     else()
-        set(_protobuf_include_path -I ${CMAKE_CURRENT_SOURCE_DIR})
+        set(_protobuf_include_path -I ${CMAKE_SOURCE_DIR})
     endif()
 
     foreach(DIR ${protobuf_generate_IMPORT_DIRS})
@@ -98,7 +98,8 @@ function(protobuf_generate_modified)
         get_filename_component(_abs_file ${_proto} ABSOLUTE)
         get_filename_component(_abs_dir ${_abs_file} DIRECTORY)
         get_filename_component(_basename ${_proto} NAME_WE)
-        file(RELATIVE_PATH _rel_dir ${CMAKE_CURRENT_SOURCE_DIR} ${_abs_dir})
+        # file(RELATIVE_PATH _rel_dir ${CMAKE_CURRENT_SOURCE_DIR} ${_abs_dir})
+        file(RELATIVE_PATH _rel_dir ${CMAKE_SOURCE_DIR} ${_abs_dir})
 
         set(_possible_rel_dir)
         if (NOT protobuf_generate_APPEND_PATH)
@@ -118,14 +119,17 @@ function(protobuf_generate_modified)
         list(APPEND _generated_srcs_all ${_generated_srcs})
 
 
-        # message(status _out!!!!!!!!${protobuf_generate_LANGUAGE}_out})
+        # message(_generated_srcs=${_generated_srcs})
         # message(status _opt!!!!!!!!${_opt}${protobuf_generate_PROTOC_OUT_DIR})
 
+
+        # message(ARGS = --${protobuf_generate_LANGUAGE}_out ${_opt}${protobuf_generate_PROTOC_OUT_DIR} ${_plugin} ${_dll_desc_out} ${_protobuf_include_path} ${_abs_file})
 
         add_custom_command(
                 OUTPUT ${_generated_srcs}
                 #!!!!!!!!!!!!!!!!!!!! 设置环境变量并执行
-                COMMAND ${CMAKE_COMMAND} -E env "PATH=$ENV{PATH}:${CMAKE_BINARY_DIR}/output/bin/" protoc
+                # COMMAND ${CMAKE_COMMAND} -E env "PATH=$ENV{PATH}:${CMAKE_BINARY_DIR}/output/bin/" protoc
+                COMMAND protobuf::protoc
                 ARGS --${protobuf_generate_LANGUAGE}_out ${_opt}${protobuf_generate_PROTOC_OUT_DIR} ${_plugin} ${_dll_desc_out} ${_protobuf_include_path} ${_abs_file}
                 DEPENDS ${_abs_file} protobuf::protoc
                 COMMENT "Running ${protobuf_generate_LANGUAGE} protocol buffer compiler on ${_proto}"
