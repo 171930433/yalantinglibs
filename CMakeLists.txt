@@ -13,9 +13,9 @@ project(yaLanTingLibs
 
 
 # set(SYSROOT_DIR /opt/zhito/sysroot)
-# set(CMAKE_PREFIX_PATH "/home/gsk/pro/CyberRT/install")
 if(NOT CMAKE_PREFIX_PATH)
-  set(CMAKE_PREFIX_PATH "/home/gsk/pro/ubuntu2204_docker/install")
+  set(CMAKE_PREFIX_PATH "/home/gsk/pro/CyberRT/install")
+  # set(CMAKE_PREFIX_PATH "/home/gsk/pro/ubuntu2204_docker/install")
 endif()
 
 find_package(protobuf REQUIRED)

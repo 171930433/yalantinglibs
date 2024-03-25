@@ -1,7 +1,3 @@
-
-set(ENV{proto_message} "proto_message")
-set(ENV{struct_pb_options} "namespace=zhito.inner_struct,converter_namespace=zhito.converter")
-
 # 设置编译器选项
 add_compile_options(-Wno-attributes)
 
@@ -14,13 +10,7 @@ include(${struct_pb_plugin_DIRS}/cmake/struct_pb.cmake)
 find_package(PCL REQUIRED COMPONENTS common io)
 find_package(OpenCV REQUIRED COMPONENTS core)
 
-
 file(GLOB_RECURSE PROTO_FILES "*.proto")
-# set(PROTO_FILES 
-#    "/home/gsk/pro/yalantinglibs/src/example/base.proto"
-#    "/home/gsk/pro/yalantinglibs/src/example/message/zframe.proto" 
-#    "/home/gsk/pro/yalantinglibs/src/example/message/imu.proto" )
-
 
 protobuf_generate_modified(
   LANGUAGE cpp
