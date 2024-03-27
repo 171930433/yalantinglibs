@@ -10,13 +10,7 @@ include(${struct_pb_plugin_DIRS}/cmake/struct_pb.cmake)
 find_package(PCL REQUIRED COMPONENTS common io)
 find_package(OpenCV REQUIRED COMPONENTS core)
 
-
 file(GLOB_RECURSE PROTO_FILES "*.proto")
-# set(PROTO_FILES 
-#    "/home/gsk/pro/yalantinglibs/src/example/base.proto"
-#    "/home/gsk/pro/yalantinglibs/src/example/message/zframe.proto" 
-#    "/home/gsk/pro/yalantinglibs/src/example/message/imu.proto" )
-
 
 protobuf_generate_modified(
   PROTO_PATH_FROM_CMAKE_SOURCE
