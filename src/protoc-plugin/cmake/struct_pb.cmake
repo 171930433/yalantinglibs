@@ -1,6 +1,6 @@
 function(protobuf_generate_modified)
     find_package(Protobuf REQUIRED)
-    set(_options APPEND_PATH DESCRIPTORS)
+    set(_options APPEND_PATH DESCRIPTORS PROTO_PATH_FROM_CMAKE_SOURCE)
     set(_singleargs LANGUAGE OUT_VAR EXPORT_MACRO PROTOC_OUT_DIR PLUGIN PROTOC_OPTION)
     if(COMMAND target_sources)
         list(APPEND _singleargs TARGET)
@@ -82,7 +82,7 @@ function(protobuf_generate_modified)
             endif()
         endforeach()
     else()
-        set(_protobuf_include_path -I ${CMAKE_SOURCE_DIR})
+        set(_protobuf_include_path -I ${CMAKE_CURRENT_SOURCE_DIR})
     endif()
 
     foreach(DIR ${protobuf_generate_IMPORT_DIRS})
@@ -93,13 +93,36 @@ function(protobuf_generate_modified)
         endif()
     endforeach()
 
+
+    if(protobuf_generate_PROTO_PATH_FROM_CMAKE_SOURCE)
+        message(SEND_INFO " ${protobuf_generate_LANGUAGE} info: protobuf_generate proto_path is ${CMAKE_SOURCE_DIR}, para IMPORT_DIRS=${IMPORT_DIRS} set invaild")
+        set(_protobuf_include_path -I ${CMAKE_SOURCE_DIR})
+        set(protobuf_generate_PROTOC_OUT_DIR ${CMAKE_BINARY_DIR})
+    endif()
+
     set(_generated_srcs_all)
     foreach(_proto ${protobuf_generate_PROTOS})
         get_filename_component(_abs_file ${_proto} ABSOLUTE)
         get_filename_component(_abs_dir ${_abs_file} DIRECTORY)
         get_filename_component(_basename ${_proto} NAME_WE)
         # file(RELATIVE_PATH _rel_dir ${CMAKE_CURRENT_SOURCE_DIR} ${_abs_dir})
-        file(RELATIVE_PATH _rel_dir ${CMAKE_SOURCE_DIR} ${_abs_dir})
+
+        set(_suitable_include_found FALSE)
+        foreach(DIR ${_protobuf_include_path})
+          if(NOT DIR STREQUAL "-I")
+            file(RELATIVE_PATH _rel_dir ${DIR} ${_abs_dir})
+            string(FIND "${_rel_dir}" "../" _is_in_parent_folder)
+            if (NOT ${_is_in_parent_folder} EQUAL 0)
+              set(_suitable_include_found TRUE)
+              break()
+            endif()
+          endif()
+        endforeach()
+    
+        if(NOT _suitable_include_found)
+          message(SEND_ERROR "Error: protobuf_generate could not find any correct proto include directory.")
+          return()
+        endif()
 
         set(_possible_rel_dir)
         if (NOT protobuf_generate_APPEND_PATH)
@@ -118,17 +141,8 @@ function(protobuf_generate_modified)
         endif()
         list(APPEND _generated_srcs_all ${_generated_srcs})
 
-
-        # message(_generated_srcs=${_generated_srcs})
-        # message(status _opt!!!!!!!!${_opt}${protobuf_generate_PROTOC_OUT_DIR})
-
-
-        # message(ARGS = --${protobuf_generate_LANGUAGE}_out ${_opt}${protobuf_generate_PROTOC_OUT_DIR} ${_plugin} ${_dll_desc_out} ${_protobuf_include_path} ${_abs_file})
-
         add_custom_command(
                 OUTPUT ${_generated_srcs}
-                #!!!!!!!!!!!!!!!!!!!! 设置环境变量并执行
-                # COMMAND ${CMAKE_COMMAND} -E env "PATH=$ENV{PATH}:${CMAKE_BINARY_DIR}/output/bin/" protoc
                 COMMAND protobuf::protoc
                 ARGS --${protobuf_generate_LANGUAGE}_out ${_opt}${protobuf_generate_PROTOC_OUT_DIR} ${_plugin} ${_dll_desc_out} ${_protobuf_include_path} ${_abs_file}
                 DEPENDS ${_abs_file} protobuf::protoc

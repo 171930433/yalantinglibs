@@ -1,7 +1,3 @@
-
-set(ENV{proto_message} "proto_message")
-set(ENV{struct_pb_options} "namespace=zhito.inner_struct,converter_namespace=zhito.converter")
-
 # 设置编译器选项
 add_compile_options(-Wno-attributes)
 
@@ -23,33 +19,29 @@ file(GLOB_RECURSE PROTO_FILES "*.proto")
 
 
 protobuf_generate_modified(
+  PROTO_PATH_FROM_CMAKE_SOURCE
   LANGUAGE cpp
   OUT_VAR PROTO_CLASS_SRCS
-  IMPORT_DIRS ${CMAKE_SOURCE_DIR}
   PROTOS ${struct_pb_plugin_DIRS}/proto_to_struct.proto  ${PROTO_FILES}
-  PROTOC_OUT_DIR ${CMAKE_BINARY_DIR}
 )
 
-
 protobuf_generate_modified(
+  PROTO_PATH_FROM_CMAKE_SOURCE
   LANGUAGE python
   OUT_VAR PROTO_PYTHON_SRCS
-  IMPORT_DIRS ${CMAKE_SOURCE_DIR}
   PROTOS ${struct_pb_plugin_DIRS}/proto_to_struct.proto  ${PROTO_FILES}
-  PROTOC_OUT_DIR ${CMAKE_BINARY_DIR}
 )
 
 list(FILTER PROTO_FILES EXCLUDE REGEX "proto_to_struct\\.proto$|image\\.proto$|pointcloud\\.proto$")
 
 
 protobuf_generate_modified(
+  PROTO_PATH_FROM_CMAKE_SOURCE
   LANGUAGE struct_pb
-  # PLUGIN "struct_pb"
-  PLUGIN "/home/gsk/pro/yalantinglibs/build/output/bin/protoc-gen-struct_pb"
+  # PLUGIN "struct_pb"  # 这么写,protoc-gen-struct_pb需要在环境变量中
+  PLUGIN "${CMAKE_BINARY_DIR}/output/bin/protoc-gen-struct_pb"
   OUT_VAR PROTO_STRUCT_SRCS
-  IMPORT_DIRS ${CMAKE_SOURCE_DIR}
   PROTOS  ${PROTO_FILES}
-  PROTOC_OUT_DIR ${CMAKE_BINARY_DIR}
   PROTOC_OPTION "namespace=zhito.inner_struct,converter_namespace=zhito.converter"
 )
 
@@ -61,10 +53,12 @@ add_library(proto_common OBJECT
   ${PROTO_PYTHON_SRCS}
 )
 
-target_link_libraries(proto_common protobuf::libprotobuf
-# 第三方库
-pcl_common pcl_io # pcl
-opencv_imgcodecs opencv_core  # opencv
+target_link_libraries(proto_common
+PUBLIC
+  protobuf::libprotobuf
+  # 第三方库
+  pcl_common pcl_io # pcl
+  opencv_imgcodecs opencv_core  # opencv
 )
 
 target_include_directories(proto_common PUBLIC 
