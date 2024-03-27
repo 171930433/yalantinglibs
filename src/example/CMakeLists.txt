@@ -4,7 +4,7 @@ add_compile_options(-Wno-attributes)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/output/examples)
 
 # protobuf_generate_struct_pb 函数
-set(struct_pb_plugin_DIRS ${CMAKE_SOURCE_DIR}/src/protoc-plugin)  # struct_pb_plugin_DIRS 将指定 proto_to_struct.proto,struct_pb.cmake等目录
+set(struct_pb_plugin_DIRS ${CMAKE_SOURCE_DIR}/src/protoc_plugin)  # struct_pb_plugin_DIRS 将指定 proto_to_struct.proto,struct_pb.cmake等目录
 include(${struct_pb_plugin_DIRS}/cmake/struct_pb.cmake)
 
 find_package(PCL REQUIRED COMPONENTS common io)

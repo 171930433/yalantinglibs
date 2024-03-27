@@ -14,13 +14,13 @@ project(yaLanTingLibs
 
 # set(SYSROOT_DIR /opt/zhito/sysroot)
 if(NOT CMAKE_PREFIX_PATH)
-  set(CMAKE_PREFIX_PATH "/home/gsk/pro/CyberRT/install")
-  # set(CMAKE_PREFIX_PATH "/home/gsk/pro/ubuntu2204_docker/install")
+  # set(CMAKE_PREFIX_PATH "/home/gsk/pro/CyberRT/install")
+  set(CMAKE_PREFIX_PATH "/home/gsk/pro/ubuntu2204_docker/install")
 endif()
 
 find_package(protobuf REQUIRED)
 
-add_subdirectory(src/protoc-plugin)
+add_subdirectory(src/protoc_plugin)
 
 option(BUILD_EXAMPLES OFF)
 
