@@ -54,25 +54,20 @@ struct base_impl : public base {
   }
 
   std::any get_field_any(std::string_view name) const override {
-    static constexpr auto map = iguana::get_members<T>();
-    std::any result;
-    for (auto const& [no, field] : map) {
-      if (result.has_value()) {
-        break;
-      }
+    static constexpr auto map = iguana::get_members_fieldname_map<T>();
 
-      std::visit(
-          [&](auto val) {
-            if (val.field_name == name) {
-              auto const offset = member_offset((T*)this, val.member_ptr);
-              auto const ptr = (((char*)this) + offset);
-              using value_type = typename decltype(val)::value_type;
-              result = *((value_type*)ptr);
-            }
-          },
-          field);
+    if (map.find(name) == map.end()) {
+      return {};
     }
-    return result;
+
+    return std::visit(
+        [&](auto val) {
+          auto const offset = member_offset((T*)this, val.member_ptr);
+          auto const ptr = (((char*)this) + offset);
+          using value_type = typename decltype(val)::value_type;
+          return std::any{*((value_type*)ptr)};
+        },
+        map.at(name));
   }
 
   iguana::detail::field_info get_field_info(std::string_view name) override {

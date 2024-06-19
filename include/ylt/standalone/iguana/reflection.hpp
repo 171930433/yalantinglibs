@@ -874,6 +874,13 @@ constexpr auto inline get_members_impl(Tuple &&tp, std::index_sequence<I...>) {
        T{std::in_place_index<I>, std::move(std::get<I>(tp))}}...};
 }
 
+template <typename T, size_t Size, typename Tuple, size_t... I>
+constexpr auto inline get_members_fieldname_map_impl(Tuple &&tp, std::index_sequence<I...>) {
+  return frozen::unordered_map<frozen::string, T, sizeof...(I)>{
+      {std::get<I>(tp).field_name,
+       T{std::in_place_index<I>, std::move(std::get<I>(tp))}}...};
+}
+
 template <typename T>
 constexpr size_t count_variant_size() {
   if constexpr (is_variant<T>::value) {
@@ -905,6 +912,21 @@ constexpr inline auto get_members() {
     using value_type = typename field_type_t<Tuple>::value_type;
     constexpr auto Size = tuple_type_count<Tuple>();
     return get_members_impl<value_type, Size>(tp,
+                                              std::make_index_sequence<Size>{});
+  }
+  else {
+    static_assert(!sizeof(T), "expected reflection or custom reflection");
+  }
+}
+
+template <typename T>
+constexpr inline auto get_members_fieldname_map() {
+  if constexpr (is_reflection_v<T> || is_custom_reflection_v<T>) {
+    constexpr auto tp = get_members_tuple<T>();
+    using Tuple = std::decay_t<decltype(tp)>;
+    using value_type = typename field_type_t<Tuple>::value_type;
+    constexpr auto Size = tuple_type_count<Tuple>();
+    return get_members_fieldname_map_impl<value_type, Size>(tp,
                                               std::make_index_sequence<Size>{});
   }
   else {
