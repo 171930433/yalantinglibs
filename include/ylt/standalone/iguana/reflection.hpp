@@ -567,6 +567,7 @@ struct base {
   virtual iguana::detail::field_info get_field_info(std::string_view name) {
     return {};
   }
+  virtual std::any get_field_any(std::string_view name) const { return {}; }
 
   template <typename T>
   T &get_field_value(std::string_view name) {

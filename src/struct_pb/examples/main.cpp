@@ -57,12 +57,16 @@ int main() {
 
   t->set_field_value("name", std::string("tom"));
   auto name = t->get_field_value<std::string>("name");
+  auto const& name2 = t->get_field_any("name");
   assert(name == "tom");
+  assert(std::any_cast<std::string>(name2) == "tom");
 
   auto d = dynamic_cast<nest *>(t.get());
   assert(d->name == "tom");
 
   t->set_field_value<std::string>("name", "hello");
   auto &field_name = t->get_field_value<std::string>("name");
+  auto const &field_name2 = t->get_field_any("name");
   assert(field_name == "hello");
+  assert(std::any_cast<std::string>(field_name2) == "hello");
 }

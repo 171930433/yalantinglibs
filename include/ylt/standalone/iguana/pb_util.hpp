@@ -1,4 +1,5 @@
 #pragma once
+#include <any>
 #include <cassert>
 #include <cstddef>
 #include <cstring>
@@ -50,6 +51,28 @@ struct base_impl : public base {
 
   void from_pb(std::string_view str) override {
     iguana::from_pb(*(static_cast<T*>(this)), str);
+  }
+
+  std::any get_field_any(std::string_view name) const override {
+    static constexpr auto map = iguana::get_members<T>();
+    std::any result;
+    for (auto const& [no, field] : map) {
+      if (result.has_value()) {
+        break;
+      }
+
+      std::visit(
+          [&](auto val) {
+            if (val.field_name == name) {
+              auto const offset = member_offset((T*)this, val.member_ptr);
+              auto const ptr = (((char*)this) + offset);
+              using value_type = typename decltype(val)::value_type;
+              result = *((value_type*)ptr);
+            }
+          },
+          field);
+    }
+    return result;
   }
 
   iguana::detail::field_info get_field_info(std::string_view name) override {
@@ -148,8 +171,8 @@ constexpr inline WireType get_wire_type() {
 }
 
 template <typename T>
-constexpr bool is_lenprefix_v = (get_wire_type<T>() ==
-                                 WireType::LengthDelimeted);
+constexpr bool is_lenprefix_v =
+    (get_wire_type<T>() == WireType::LengthDelimeted);
 
 [[nodiscard]] IGUANA_INLINE uint32_t encode_zigzag(int32_t v) {
   return (static_cast<uint32_t>(v) << 1U) ^
