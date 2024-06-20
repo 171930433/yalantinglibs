@@ -568,11 +568,14 @@ struct inner_struct PUBLIC(inner_struct) {
   int z;
 };
 
-constexpr inline auto get_members_impl(inner_struct *) {
-  return std::make_tuple(struct_pb::field_t{&inner_struct::x, 7, "a"},
-                         struct_pb::field_t{&inner_struct::y, 9, "b"},
-                         struct_pb::field_t{&inner_struct::z, 12, "c"});
-}
+REFLECTION(inner_struct, x, y, z);
+
+
+// constexpr inline auto get_members_impl(inner_struct *) {
+//   return std::make_tuple(struct_pb::field_t{&inner_struct::x, 7, "a"},
+//                          struct_pb::field_t{&inner_struct::y, 9, "b"},
+//                          struct_pb::field_t{&inner_struct::z, 12, "c"});
+// }
 }  // namespace my_space
 
 struct test_pb_st1 PUBLIC(test_pb_st1) {

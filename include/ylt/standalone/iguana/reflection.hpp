@@ -4,6 +4,7 @@
 
 #ifndef IGUANA_REFLECTION_HPP
 #define IGUANA_REFLECTION_HPP
+#include <any>
 #include <array>
 #include <functional>
 #include <iomanip>
@@ -564,7 +565,8 @@ struct base {
   virtual void to_pb(std::string &str) {}
   virtual void from_pb(std::string_view str) {}
   virtual std::vector<std::string_view> get_fields_name() { return {}; }
-  virtual iguana::detail::field_info get_field_info(std::string_view name) {
+  virtual iguana::detail::field_info get_field_info(
+      std::string_view name) const {
     return {};
   }
   virtual std::any get_field_any(std::string_view name) const { return {}; }
@@ -874,13 +876,6 @@ constexpr auto inline get_members_impl(Tuple &&tp, std::index_sequence<I...>) {
        T{std::in_place_index<I>, std::move(std::get<I>(tp))}}...};
 }
 
-template <typename T, size_t Size, typename Tuple, size_t... I>
-constexpr auto inline get_members_fieldname_map_impl(Tuple &&tp, std::index_sequence<I...>) {
-  return frozen::unordered_map<frozen::string, T, sizeof...(I)>{
-      {std::get<I>(tp).field_name,
-       T{std::in_place_index<I>, std::move(std::get<I>(tp))}}...};
-}
-
 template <typename T>
 constexpr size_t count_variant_size() {
   if constexpr (is_variant<T>::value) {
@@ -919,15 +914,21 @@ constexpr inline auto get_members() {
   }
 }
 
+template <size_t Size, typename T, size_t... I>
+constexpr auto inline get_fieldname_map_impl(T &&arr,
+                                             std::index_sequence<I...>) {
+  return frozen::unordered_map<frozen::string, uint32_t, sizeof...(I)>{
+      {arr.at(I), uint32_t(I)}...};
+}
+
 template <typename T>
-constexpr inline auto get_members_fieldname_map() {
+constexpr inline auto get_fieldname_map() {
   if constexpr (is_reflection_v<T> || is_custom_reflection_v<T>) {
-    constexpr auto tp = get_members_tuple<T>();
-    using Tuple = std::decay_t<decltype(tp)>;
-    using value_type = typename field_type_t<Tuple>::value_type;
-    constexpr auto Size = tuple_type_count<Tuple>();
-    return get_members_fieldname_map_impl<value_type, Size>(tp,
-                                              std::make_index_sequence<Size>{});
+    using reflect_members = decltype(iguana_reflect_type(std::declval<T>()));
+    constexpr size_t Size = reflect_members::size_type::value;
+
+    return get_fieldname_map_impl<Size>(reflect_members::arr(),
+                                        std::make_index_sequence<Size>{});
   }
   else {
     static_assert(!sizeof(T), "expected reflection or custom reflection");

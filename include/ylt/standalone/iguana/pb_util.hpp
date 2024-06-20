@@ -54,11 +54,14 @@ struct base_impl : public base {
   }
 
   std::any get_field_any(std::string_view name) const override {
-    static constexpr auto map = iguana::get_members_fieldname_map<T>();
+    static constexpr auto map = iguana::get_members<T>();
+    static constexpr auto name_no = iguana::get_fieldname_map<T>();
 
-    if (map.find(name) == map.end()) {
+    if (name_no.find(name) == name_no.end()) {
       return {};
     }
+
+    auto const no = name_no.at(name) + 1;
 
     return std::visit(
         [&](auto val) {
@@ -67,31 +70,32 @@ struct base_impl : public base {
           using value_type = typename decltype(val)::value_type;
           return std::any{*((value_type*)ptr)};
         },
-        map.at(name));
+        map.at(no));
   }
 
-  iguana::detail::field_info get_field_info(std::string_view name) override {
+  iguana::detail::field_info get_field_info(
+      std::string_view name) const override {
     static constexpr auto map = iguana::get_members<T>();
-    iguana::detail::field_info info{};
-    for (auto [no, field] : map) {
-      if (info.offset > 0) {
-        break;
-      }
-      std::visit(
-          [&](auto val) {
-            if (val.field_name == name) {
-              info.offset = member_offset((T*)this, val.member_ptr);
-              using value_type = typename decltype(val)::value_type;
-#if defined(__clang__) || defined(_MSC_VER) || \
-    (defined(__GNUC__) && __GNUC__ > 8)
-              info.type_name = type_string<value_type>();
-#endif
-            }
-          },
-          field);
+    static constexpr auto name_no = iguana::get_fieldname_map<T>();
+
+    if (name_no.find(name) == name_no.end()) {
+      return {};
     }
 
-    return info;
+    auto const no = name_no.at(name) + 1;
+
+    return std::visit(
+        [&](auto val) {
+          iguana::detail::field_info info;
+          info.offset = member_offset((T*)this, val.member_ptr);
+          using value_type = typename decltype(val)::value_type;
+#if defined(__clang__) || defined(_MSC_VER) || \
+    (defined(__GNUC__) && __GNUC__ > 8)
+          info.type_name = type_string<value_type>();
+#endif
+          return info;
+        },
+        map.at(no));
   }
 
   std::vector<std::string_view> get_fields_name() override {
